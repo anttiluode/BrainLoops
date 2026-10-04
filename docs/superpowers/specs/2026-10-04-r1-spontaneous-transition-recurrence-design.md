@@ -6,14 +6,16 @@ Scope: independent-dataset follow-up motivated by EEGMMIDB Gate 1C
 
 ## Question
 
-> **Can spontaneous resting EEG repeatedly express the same local state-space transformation even when it does not return to the same state?**
+> **Can resting EEG repeatedly express the same local state-space transformation even when it does not return to the same state?**
 
 This question is motivated by the conjunction of the frozen EEGMMIDB results:
 
 - Gate 1B: the true `T0` phase did **not** preferentially return to the identical coarse state.
 - Gate 1C: the true `T0` phase **did** repeatedly express a similar local direction of change in continuous PCA state space.
 
-R1 asks whether an analogous phenomenon exists without an external task clock.
+R1 asks whether an analogous phenomenon exists **within resting-state blocks and without using task/event timing to locate candidate recurrence**.
+
+“Spontaneous” in this document means spontaneous temporal structure *within a fixed resting condition*. LEMON still contains instructed eyes-open/eyes-closed blocks, so R1 does not claim unconstrained naturalistic brain dynamics.
 
 R1 is a new branch of evidence. It does not reopen or rewrite the original Gate-1B-to-LEMON advancement rule, and it does not retroactively change any Gate 1 result. The hypothesis was generated on EEGMMIDB and is tested on a different dataset.
 
@@ -30,10 +32,15 @@ The two conditions are analyzed separately:
 
 No condition may be selected after seeing the results.
 
-Subjects are split deterministically before the primary receipt is inspected:
+Subjects are split deterministically before the primary receipt is inspected. For the literal subject identifier string `subject_id`, compute:
 
-- development: 20% of usable subject IDs selected by a stable hash rule fixed in code;
-- held out: remaining 80%.
+```text
+h = SHA256("brainloops-r1:" + subject_id)
+development iff int(h, 16) mod 5 == 0
+held-out otherwise
+```
+
+This yields an approximately 20% development / 80% held-out split without depending on file ordering. The exact resulting subject lists are written into the receipt before held-out scoring.
 
 All threshold tuning, parser fixes, and synthetic calibration must be completed using synthetic data and/or the development split. The held-out split is evaluated once under the frozen configuration.
 
@@ -49,6 +56,8 @@ R1 reuses the existing BrainLoops EEG feature pipeline where possible:
 For each subject and condition, all usable blocks of that condition are pooled only for fitting an up-to-8-dimensional PCA basis. Each physical block is then transformed separately and all recurrence calculations remain strictly within block boundaries. No transition or lag pair may cross a block boundary.
 
 This gives a common subject-condition coordinate system without introducing artificial transitions between noncontiguous blocks.
+
+A physical block is usable only if the feature pipeline succeeds with finite output and leaves enough epochs to evaluate the full frozen 20 s maximum lag plus the transition half-window. A subject-condition result is reported only when at least four physical blocks are usable. These are data-integrity requirements, not artifact-score thresholds.
 
 ## Local transition vectors
 
@@ -70,11 +79,19 @@ The preregistered lag grid is:
 2.0 s, 2.5 s, ..., 20.0 s
 ```
 
-At each lag `tau`, using only within-block pairs:
+For each physical block `b` and lag `tau`:
 
 ```text
-R_v(tau) = median cosine(v_t, v_{t+tau})
+R_v,b(tau) = median_t cosine(v_t, v_{t+tau})
 ```
+
+The subject-condition spectrum then equal-weights physical blocks:
+
+```text
+R_v(tau) = median_b R_v,b(tau)
+```
+
+Thus a longer or more densely sampled block cannot dominate simply by contributing more pairs.
 
 The minimum lag avoids trivial overlap/local smoothness around adjacent transition vectors. The maximum lag stays well inside the approximately minute-scale resting blocks while spanning the multi-second scales that motivated BrainLoops.
 
@@ -84,7 +101,7 @@ The real per-subject-condition transition statistic is the **maximum over the en
 M_v = max_tau R_v(tau)
 ```
 
-The same maximization is performed independently inside every null replicate. This max-statistic is the multiple-lag correction; no lag may be selected after results are seen.
+The same block aggregation and maximization are performed independently inside every null replicate. This max-statistic is the multiple-lag correction; no lag may be selected after results are seen.
 
 The lag achieving the real maximum is reported descriptively but is not treated as an anatomical or intrinsic circuit period.
 
@@ -92,21 +109,22 @@ The lag achieving the real maximum is reported descriptively but is not treated 
 
 R1 measures state recurrence in parallel so that transition recurrence is not automatically interpreted as a return to the same state.
 
-Within each subject-condition PCA representation, component scores are standardized using the real-data component scale. For each lag:
+Within each subject-condition PCA representation, component scores are standardized using the real-data component scale. For each block and lag:
 
 ```text
-R_z(tau) = - median ||z_t - z_{t+tau}||^2
+R_z,b(tau) = - median_t ||z_t - z_{t+tau}||^2
 ```
 
-Higher `R_z` therefore means closer return in continuous state space.
+Higher `R_z,b` therefore means closer return in continuous state space.
 
-The corresponding max statistic is:
+As above, physical blocks are equal-weighted:
 
 ```text
+R_z(tau) = median_b R_z,b(tau)
 M_z = max_tau R_z(tau)
 ```
 
-The exact same lag grid, within-block restrictions, and max-over-lags procedure are used for real and null data.
+The exact same lag grid, within-block restrictions, block aggregation, and max-over-lags procedure are used for real and null data.
 
 This is deliberately continuous. R1 does not introduce a new K-means state count.
 
@@ -120,15 +138,15 @@ Within each physical block, independently permute the order of the derived trans
 
 This preserves the corresponding marginal vector/state distributions and sample counts but destroys temporal ordering.
 
-The same preregistered lag scan and max statistic are applied to every replicate.
+The same preregistered lag scan, per-block aggregation, and max statistic are applied to every replicate.
 
 Purpose: ask whether there is temporal recurrence at all beyond the marginal geometry of the representation.
 
 ### Null B — multivariate phase-preserving linear-lag null
 
-Within each block, apply a multivariate phase-randomized surrogate to the continuous PCA trajectory using a shared random phase per frequency across PCA dimensions, preserving the block's linear auto/cross-spectral structure and relative linear phase relationships while removing higher-order temporal organization.
+Within each physical block, apply a multivariate phase-randomized surrogate to the continuous PCA trajectory using a shared random phase per frequency across PCA dimensions, preserving the block's linear auto/cross-spectral structure and relative linear phase relationships while removing higher-order temporal organization.
 
-Recompute transition and state recurrence spectra from each surrogate trajectory, including the full lag scan and max statistic.
+Recompute transition and state recurrence spectra from each surrogate trajectory, including the full lag scan, block aggregation, and max statistic.
 
 Purpose: separate recurrence explainable by linear spectral/phase structure from recurrence beyond that null.
 
@@ -156,12 +174,13 @@ The held-out EC split is the primary population test.
 
 For a given statistic/null pair:
 
-1. aggregate physical blocks within subject without crossing block boundaries;
-2. use the subject-level real statistic as one observation;
-3. aggregate each null replicate across held-out subjects with the median;
-4. compare the held-out median real statistic against the distribution of held-out median null statistics;
-5. compute the one-sided permutation p-value with the same `(+1)/(n_null+1)` convention used by existing BrainLoops gates;
-6. report the fraction of held-out subjects whose real statistic exceeds their own null median.
+1. compute the subject-level real statistic using the frozen equal-block aggregation above;
+2. compute the corresponding subject-level statistic for every null replicate;
+3. aggregate real subject statistics across held-out subjects with the median;
+4. aggregate each null replicate across held-out subjects with the median;
+5. compare the held-out median real statistic against the distribution of held-out median null statistics;
+6. compute the one-sided permutation p-value with the same `(+1)/(n_null+1)` convention used by existing BrainLoops gates;
+7. report the fraction of held-out subjects whose real statistic exceeds their own null median.
 
 Primary population success requires:
 
@@ -183,7 +202,7 @@ For transition recurrence, classify the primary EC held-out result as:
 - **LINEAR-LAG TRANSITION RECURRENCE**: transition recurrence beats the order-destroying null but not the phase-preserving null;
 - **BEYOND-LINEAR TRANSITION RECURRENCE**: transition recurrence beats both nulls.
 
-Matched state recurrence receives the same three-level classification.
+Matched state recurrence receives the same three-level classification, ordered as `NO ROBUST < LINEAR-LAG < BEYOND-LINEAR`.
 
 The scientifically strongest dissociation is:
 
@@ -211,7 +230,7 @@ A transition recurrence result remains scientifically useful even if state recur
 
 ## Primary success rule
 
-The primary R1 gate asks first whether spontaneous transition recurrence exists in independent resting EEG.
+The primary R1 gate asks first whether resting transition recurrence exists in independent EEG.
 
 R1 primary EC status is:
 
@@ -252,7 +271,7 @@ These controls freeze the meaning of the outcome labels before the held-out LEMO
 
 Artifact burden is reported, not silently optimized away.
 
-The primary analysis does not discard subjects merely because a clipping statistic is high unless a predeclared data-integrity threshold is violated (e.g. unreadable/missing data, insufficient usable epochs, nonfinite features).
+The primary analysis does not discard subjects merely because a clipping statistic is high unless a predeclared data-integrity requirement is violated (unreadable/missing data, insufficient usable epochs for the frozen lag grid, nonfinite features, or fewer than four usable blocks in that condition).
 
 Secondary diagnostics report correlations between artifact burden and subject-level transition recurrence/effect size. These diagnostics cannot rescue or invalidate the primary gate post hoc; they inform interpretation and possible future replication design.
 
@@ -260,7 +279,7 @@ No alternative PCA dimension, lag range, window width, channel subset, or condit
 
 ## Claim boundary
 
-A positive R1 result supports only a computational statement about spontaneous scalp-EEG state-space dynamics.
+A positive R1 result supports only a computational statement about resting scalp-EEG state-space dynamics.
 
 It does **not** identify:
 
@@ -280,7 +299,7 @@ Even `BEYOND-LINEAR TRANSITION RECURRENCE` means only "not explained by this pha
 
 Gate 1C established, on task-structured EEGMMIDB, that an externally defined `T0` boundary repeatedly carried a similar local PCA transition direction despite Gate 1B's failure of same-state recurrence.
 
-R1 removes the external clock entirely. It asks whether recurrence of transition geometry can be detected from resting dynamics alone.
+R1 removes the external clock from recurrence detection. It asks whether recurrence of transition geometry can be detected from within resting blocks alone.
 
 Therefore:
 
