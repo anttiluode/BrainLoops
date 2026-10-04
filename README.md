@@ -111,13 +111,19 @@ brainloops gate1c \
   --resume
 ```
 
-Gate 1C uses the same numerical rule (`p <= 0.05` and positive direction in at least `2/3` of the deterministic held-out split), but it is **not an independent confirmation**: it was designed after seeing Gate 1B and reuses EEGMMIDB. Receipts mark this scope as `post_gate1b_followup_same_dataset`. A Gate-1C pass would support repeated transition geometry; it would not turn Gate 1B into a pass.
+The real 109-subject Gate-1C receipt is a **PASS** under its frozen numerical rule. All 1,308 task runs completed. In the 88 held-out subjects, the median real transition-consistency score was `0.052647`, while the median of the 99 aggregate circular-shift null scores was `0.005931`; even the largest aggregate null score was only `0.013469`. The one-sided aggregate permutation value therefore hit the 99-null floor at `p = 0.01`. Positive direction held in 78/88 held-out subjects (88.64%); 55/88 subjects also had individual one-sided `p <= 0.05`.
+
+This is the central Gate-1C conclusion: **the true `T0` phase does not return to one privileged coarse state, but it does repeatedly carry a much more consistent local direction of change than phase-shifted control times on the same untouched EEG trajectory.** In other words, Gate 1B's “same point” picture failed, while Gate 1C's “same transformation” picture survived strongly.
+
+The secondary history diagnostic did **not** support the specific idea that the coarse preceding `T1`/`T2` label makes those transition vectors more alike. Its held-out median `history_delta` was `-0.01115` (same-preceding-task similarity minus different-preceding-task similarity), with only 31/88 held-out subjects positive. That diagnostic remains exploratory and non-primary.
+
+Gate 1C is **not an independent confirmation**: it was designed after seeing Gate 1B and reuses EEGMMIDB. Receipts mark this scope as `post_gate1b_followup_same_dataset`. The result supports repeated transition geometry at the known experimental boundary; it does not turn Gate 1B into a pass, identify an anatomical loop, or by itself establish spontaneous resting-state recurrence.
 
 ## Dataset ladder
 
 Phase 1 uses **EEGMMIDB** as a known-clock instrument test, not as the primary intrinsic-loop dataset.
 
-Gate 1B failed its frozen phase-alignment rule, so the planned **LEMON (MPI Leipzig Mind-Brain-Body EEG)** resting-state step remains blocked. Gate 1C is a mechanistic follow-up on EEGMMIDB and does not reopen that ladder by itself.
+Gate 1B failed its frozen phase-alignment rule, so the planned **LEMON (MPI Leipzig Mind-Brain-Body EEG)** resting-state step remains blocked under the original advancement criterion. Gate 1C is a mechanistic follow-up on EEGMMIDB and does not reopen that ladder by itself.
 
 **CHB-MIT** is reserved for later long-duration/pathology stress testing. It will not be pooled with healthy resting EEG or used to claim normal brain-loop organization.
 
@@ -181,5 +187,6 @@ The original design and implementation plan are frozen under `docs/superpowers/`
 - Gate 0 synthetic truth: **PASS**, implemented and frozen.
 - Gate 1A EEGMMIDB timescale positive control: **PASS** on the committed 109-subject receipt (`p = 0.01`, 73/88 held-out positive), with the state-shuffle-null limitation documented.
 - Gate 1B fixed-timeline phase alignment: **FAIL** on the committed 109-subject receipt (`p = 1.0`, 18/88 held-out positive; observed median `0.142857` vs null median `0.166667`).
-- Gate 1C repeated T0 transition geometry: implemented and synthetic-tested; **real EEGMMIDB receipt pending**. It is a post-Gate-1B same-dataset follow-up, not independent confirmation.
+- Gate 1C repeated T0 transition geometry: **PASS** on the 109-subject follow-up receipt (`p = 0.01`, 78/88 held-out positive; real median `0.052647` vs aggregate-null median `0.005931`). It is a post-Gate-1B same-dataset follow-up, not independent confirmation.
+- Secondary Gate-1C history diagnostic: **not supported** (`history_delta = -0.01115`, 31/88 held-out positive); exploratory only.
 - LEMON resting-state work: **blocked by Gate 1B FAIL** under the frozen ladder.
