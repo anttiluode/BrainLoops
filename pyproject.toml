@@ -9,6 +9,9 @@ description = "Measure recurrent temporal structure in EEG-derived state traject
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26", "scipy>=1.11", "scikit-learn>=1.4", "mne>=1.7"]
 
+[project.scripts]
+brainloops = "brainloops.cli:main"
+
 [project.optional-dependencies]
 test = ["pytest>=8"]
 
