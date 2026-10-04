@@ -49,13 +49,13 @@ brainloops gate0 --output results/receipts/gate0-synthetic.json
 
 The committed Phase-1 Gate-0 receipt uses 99 null samples and passes all four frozen classes.
 
-### Gate 1 — EEGMMIDB known-clock positive control
+### Gate 1A — EEGMMIDB timescale positive control
 
 Before asking about spontaneous resting recurrence, BrainLoops must recover a temporal driver that is known to exist.
 
 The [PhysioNet EEG Motor Movement/Imagery Dataset](https://physionet.org/content/eegmmidb/1.0.0/) contains 64-channel, 160 Hz EEG from 109 volunteers. Runs 3–14 alternate task and rest epochs and include EDF+ annotations `T0` (rest), `T1`, and `T2` (task conditions).
 
-BrainLoops constructs PCA/K-means state trajectories **without annotations**. Only afterward it asks whether the measured state return-time spectrum carries excess mass at successive `T0 → T0` intervals (the full rest/task cycle). Its positive-control null permutes the unsupervised state-label timeline while preserving state occupancy, then recomputes return periods. Labels therefore validate the clock; they never construct the states.
+BrainLoops constructs PCA/K-means state trajectories **without annotations**. Only afterward Gate 1A asks whether the measured state return-time spectrum carries excess mass at successive `T0 → T0` intervals (the full rest/task cycle). Its implemented null permutes the unsupervised state-label timeline while preserving state occupancy, then recomputes return periods. Labels therefore validate the clock; they never construct the states.
 
 ```bash
 brainloops gate1 \
@@ -65,17 +65,39 @@ brainloops gate1 \
   --resume
 ```
 
-Gate 1 requires at least three held-out subjects and null resolution sufficient for `p <= 0.05`. Otherwise it reports `INSUFFICIENT_DATA`. A real confirmatory Gate-1 receipt is required before BrainLoops moves on to healthy resting-state claims.
+The committed full-dataset receipt contains all 109 subjects, with 21 deterministic development subjects and 88 held-out subjects. Gate 1A passes its implemented rule with aggregate `p = 0.01`; 73/88 held-out subjects (82.95%) are in the positive direction.
+
+That result is useful, but its scope is narrower than the original written Gate-1 plan. The frozen plan described circular annotation shifts; the implemented null instead shuffles the state-label timeline, which destroys temporal autocorrelation as well as task alignment. Also, the period-only score depends on `T0 → T0` gaps, so a common circular shift of all annotations would leave that statistic unchanged. BrainLoops therefore preserves the result as **Gate 1A: a temporal-sensitivity/timescale positive control**, not as the final phase-alignment confirmation.
+
+### Gate 1B — fixed-timeline phase alignment
+
+Gate 1B keeps the EEG-derived state timeline completely fixed and moves only the external clock.
+
+For each unsupervised state coarse-graining (`k = 6, 10, 20`), it samples the state at successive `T0` onsets and measures how often consecutive `T0` events return to the same state. The null circularly shifts the annotation indices across the fixed state timeline. This preserves state occupancy, dwell, autocorrelation, recurrence, and the exact `T0` spacing; it changes only which phase of the EEG trajectory is called `T0`.
+
+A deliberately important synthetic control is included: a trajectory that is perfectly periodic at the correct period but has no special `T0` phase must **not** automatically pass Gate 1B. An event-locked anchor does pass.
+
+Run:
+
+```bash
+brainloops gate1b \
+  --data /path/to/eegmmidb \
+  --n-null 99 \
+  --output results/receipts/gate1b-eegmmidb.json \
+  --resume
+```
+
+Gate 1B uses the same held-out-subject rule as Gate 1A: aggregate one-sided permutation `p <= 0.05` and positive direction in at least `2/3` of held-out subjects. A real Gate-1B receipt is required before BrainLoops advances to resting-state claims.
 
 ## Dataset ladder
 
 Phase 1 uses **EEGMMIDB** as a known-clock instrument test, not as the primary intrinsic-loop dataset.
 
-If Gate 1 passes, the next planned dataset is **LEMON (MPI Leipzig Mind-Brain-Body EEG)**: healthy resting EEG with recordings long enough to test multi-second recurrence across many subjects. Eyes-open and eyes-closed blocks will be handled separately so the block alternation cannot create the primary result.
+If Gate 1B passes, the next planned dataset is **LEMON (MPI Leipzig Mind-Brain-Body EEG)**: healthy resting EEG with recordings long enough to test multi-second recurrence across many subjects. Eyes-open and eyes-closed blocks will be handled separately so the block alternation cannot create the primary result.
 
 **CHB-MIT** is reserved for later long-duration/pathology stress testing. It will not be pooled with healthy resting EEG or used to claim normal brain-loop organization.
 
-LEMON/Gates 2–3 and the MultipleTemporalLenses memory bridge/Gate 4 are intentionally deferred until Gate 1 survives.
+LEMON/Gates 2–3 and the MultipleTemporalLenses memory bridge/Gate 4 are intentionally deferred until Gate 1B survives.
 
 ## Probe one EDF
 
@@ -120,14 +142,18 @@ brainloops/
 experiments/
   gate0_synthetic.py
   gate1_eegmmidb.py
-results/receipts/
+  gate1b_eegmmidb.py
+results/
+  RESULTS.md
+  receipts/
 docs/superpowers/
 ```
 
-The design and implementation plan are frozen under `docs/superpowers/`.
+The original design and implementation plan are frozen under `docs/superpowers/`; `results/RESULTS.md` records the Gate-1A correction rather than rewriting that history.
 
 ## Status
 
-- Gate 0 synthetic truth: implemented and frozen.
-- Gate 1 EEGMMIDB runner: implemented, deterministic, and resumable.
-- Real Gate 1 confirmatory verdict: **not supplied by the repository itself**; run it on the dataset and preserve the receipt before advancing to LEMON.
+- Gate 0 synthetic truth: **PASS**, implemented and frozen.
+- Gate 1A EEGMMIDB timescale positive control: **PASS** on the committed 109-subject receipt (`p = 0.01`, 73/88 held-out positive), with the state-shuffle-null limitation documented.
+- Gate 1B fixed-timeline phase alignment: implemented with synthetic positive and period-only negative controls; **real EEGMMIDB receipt pending**.
+- LEMON resting-state work: deferred until Gate 1B survives.
