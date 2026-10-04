@@ -59,15 +59,15 @@ That reversal is retained as a descriptive clue only. The opposite direction was
 
 The failure does not erase Gate 1A's weaker timescale sensitivity. Together the receipts distinguish “structure near the known task-clock timescale” from “return to the identical coarse state at the true task phase.”
 
-Gate 1B also does not show that the brain lacks recurrent dynamics. Its metric asks for repeated state identity, which can fail if the same experimental boundary repeatedly drives similar **transitions** from different history-dependent starting states.
+Gate 1B also does not show that the brain lacks recurrent dynamics. Its metric asks for repeated state identity, which can fail if the same experimental boundary repeatedly drives similar **transitions** from different starting states.
 
 Artifact burden does not provide an obvious explanation for the failure in the committed receipt: all task runs completed, and correlations between clipping burden and the Gate-1B score/effect were small in the receipt analysis. The EDF annotation warnings seen during loading therefore did not manifest as skipped runs.
 
 Under the frozen dataset ladder, Gate 1B `FAIL` keeps LEMON blocked.
 
-## Gate 1C — repeated T0 transition geometry
+## Gate 1C — repeated T0 transition geometry: PASS
 
-Status: implementation and synthetic tests complete; real EEGMMIDB receipt pending.
+Receipt analyzed: `results/receipts/gate1c-eegmmidb.json` (full 109-subject run produced with the frozen Gate-1C implementation).
 
 Gate 1C was designed **after observing Gate 1B**. It is therefore a mechanistic follow-up on the same dataset, not an independent confirmatory test and not a rescue of Gate 1B.
 
@@ -77,34 +77,73 @@ For each task run:
 
 1. Fit an up-to-8-dimensional PCA trajectory from EEG features without annotations.
 2. Convert `T0` onsets to the nearest feature epochs.
-3. With half-window `w = 1` by default, form a symmetric transition vector
+3. With half-window `w = 1`, form a symmetric transition vector
    `v_i = mean(z[t_i+1 : t_i+w+1]) - mean(z[t_i-w : t_i])`.
 4. Normalize valid nonzero transition vectors and use their mean off-diagonal pairwise cosine similarity as the primary score.
 5. Build the null by circularly shifting all event centers through the valid interior of the **fixed PCA trajectory**. The EEG trajectory is not shuffled or refit.
-6. Aggregate runs by subject and apply the same deterministic development/held-out split as Gates 1A/1B.
+6. Aggregate runs by subject, then aggregate only the deterministic held-out subjects for the primary verdict.
 
-The primary numerical rule remains aggregate one-sided permutation `p <= 0.05` plus positive direction in at least `2/3` of held-out subjects. Because the hypothesis was selected after Gate 1B on the same subjects, a PASS would mean only that repeated transition geometry is present in this follow-up analysis.
+Observed result:
 
-Synthetic tests freeze two distinctions before the real Gate-1C receipt is inspected: a repeatedly injected event-locked transition direction passes, while a smooth trajectory that is merely periodic at the correct interval does not automatically pass.
+- 109 subjects: 21 deterministic development, 88 held out.
+- 12 task runs per subject, 1,308/1,308 runs completed and 0 skipped.
+- 99 circular-shift null samples per run.
+- Held-out observed median transition-consistency score: `0.052647`.
+- Median of the 99 held-out aggregate null scores: `0.005931`.
+- Aggregate null range: `0.000870` to `0.013469`; the observed median exceeds all 99 aggregate null replicates.
+- One-sided aggregate permutation `p = 0.01`, the resolution floor for 99 nulls.
+- Positive direction in 78/88 held-out subjects = 88.64%.
+- 55/88 held-out subjects had individual one-sided `p <= 0.05`; 43/88 were at the `p = 0.01` floor.
+- Development split was also directionally positive in 20/21 subjects, but it is not used for the primary verdict.
+- Receipt verdict: `PASS`.
 
-### Secondary history diagnostic
+### What Gate 1C supports
 
-Gate 1C also records, without using it for the primary verdict, whether transition vectors are more similar after the same preceding task label (`T1/T1` or `T2/T2`) than after different preceding labels (`T1/T2`). The reported `history_delta` is
+Gate 1C supports **repeated transition geometry at the true `T0` phase**. The same EEG trajectory that did not repeatedly occupy one identical coarse state at `T0` nevertheless shows a reproducible local direction of change around `T0`, substantially stronger than circularly shifted control phases on the unchanged trajectory.
+
+The cleanest joint reading of Gates 1B and 1C is therefore:
 
 ```text
-mean cosine(same preceding task) - mean cosine(different preceding task)
+same phase -> same coarse state        FAIL
+same phase -> similar state change     PASS
 ```
 
-This is exploratory and explicitly marked `history_diagnostic_is_primary = false` in the receipt.
+That is a sharper result than the original “loop” picture. The measured object looks more like a repeated transformation through state space than a return to one fixed point.
 
-Run the real follow-up with:
+### What Gate 1C does not establish
 
-```bash
-brainloops gate1c \
-  --data "E:\\DocsHouse\\575 45 degree angle is real in brain\\physionet.org\\files" \
-  --n-null 99 \
-  --output results/receipts/gate1c-eegmmidb.json \
-  --resume
+Gate 1C is a `post_gate1b_followup_same_dataset` analysis. The hypothesis was chosen after inspecting Gate 1B and then tested on the same EEGMMIDB subjects. The strong held-out numerical result is real for this frozen follow-up, but it is **not an independent replication**.
+
+The result also does not by itself establish an anatomical recurrent circuit, spontaneous resting-state recurrence, a hippocampal/cortical loop, or a general history-memory mechanism. At this stage the conservative interpretation is that the known experimental boundary is associated with a repeatable local EEG state transformation that survives a fixed-timeline circular-shift null.
+
+Gate 1B remains `FAIL`, and the original LEMON advancement criterion remains unsatisfied.
+
+### Secondary history diagnostic: not supported
+
+Gate 1C also records, without using it for the primary verdict, whether transition vectors are more similar after the same preceding task label (`T1/T1` or `T2/T2`) than after different preceding labels (`T1/T2`). The diagnostic is
+
+```text
+history_delta = mean cosine(same preceding task) - mean cosine(different preceding task)
 ```
 
-The receipt records `analysis_scope = post_gate1b_followup_same_dataset`. Whatever Gate 1C finds, Gate 1B remains `FAIL` and the original LEMON advancement criterion remains unsatisfied.
+The held-out median `history_delta` was `-0.011155`, and only 31/88 held-out subjects had positive values. There is therefore no support here for the specific coarse-history claim that matching the immediately preceding `T1`/`T2` label makes the subsequent `T0` transition more similar. This negative diagnostic is descriptive and exploratory; no confirmatory p-value was defined for it.
+
+## Current interpretation
+
+Across the three EEGMMIDB gates, the increasingly narrow picture is:
+
+- Gate 1A: the unsupervised dynamics contain structure at the task-clock **timescale**.
+- Gate 1B: the true task phase is **not** a privileged return to the identical coarse state.
+- Gate 1C: the true task phase **is** a privileged repeated **direction of transition** through continuous PCA state space.
+
+So the useful object emerging from BrainLoops is not yet a literal cycle with a fixed return point. It is a reproducible event-aligned state-space transformation. Whether spontaneous brain dynamics contain analogous transition motifs without an external task clock remains an open question.
+
+## Dataset ladder
+
+Phase 1 uses **EEGMMIDB** as a known-clock instrument test, not as the primary intrinsic-loop dataset.
+
+Gate 1B failed its frozen phase-alignment rule, so the planned **LEMON (MPI Leipzig Mind-Brain-Body EEG)** resting-state step remains blocked under the original advancement criterion. Gate 1C is a mechanistic follow-up on EEGMMIDB and does not reopen that ladder by itself.
+
+**CHB-MIT** is reserved for later long-duration/pathology stress testing. It will not be pooled with healthy resting EEG or used to claim normal brain-loop organization.
+
+LEMON/Gates 2–3 and the MultipleTemporalLenses memory bridge/Gate 4 remain deferred under the original ladder.
