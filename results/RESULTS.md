@@ -31,30 +31,80 @@ The current period-only statistic uses only `T0 → T0` gaps. A common circular 
 
 It also does not identify an anatomical loop or assign any period to hippocampal, thalamocortical, basal-ganglia, or other named circuitry.
 
-## Gate 1B — fixed-timeline phase alignment
+## Gate 1B — fixed-timeline phase alignment: FAIL
 
-Status: implementation complete; real EEGMMIDB receipt pending.
+Receipt: `results/receipts/gate1b-eegmmidb.json`
 
-Gate 1B asks a stricter question while leaving the EEG-derived state timeline untouched:
+Gate 1B left the EEG-derived state timeline untouched and moved only the external clock. At `k = 6, 10, 20`, it measured how often successive `T0` events returned to the same unsupervised state, then compared that score with circular shifts of the annotation indices over the fixed state sequence.
 
-1. Fit PCA/K-means state trajectories without annotations at `k = 6, 10, 20`.
-2. Convert successive `T0` onsets to feature-epoch indices.
-3. Measure the fraction of consecutive `T0` pairs that return to the same unsupervised state, averaged equally across the three coarse-grainings.
-4. Generate the null by circularly shifting the `T0` indices across the **fixed** state timeline. The EEG state sequence itself is never shuffled.
-5. Aggregate runs by subject and use only held-out subjects for the confirmatory verdict.
+Observed full-dataset result:
 
-The null preserves the complete state trajectory, including occupancy, dwell, autocorrelation, and recurrence. It changes only the external phase assignment.
+- 109 subjects: 21 deterministic development, 88 held out.
+- 12 task runs per subject, 1,308/1,308 runs completed and 0 skipped.
+- 99 circular-shift null samples per run.
+- Held-out observed aggregate median score: `0.142857`.
+- Held-out aggregate null median: `0.166667`.
+- All 99/99 sampled aggregate null scores were at least as large as the observed aggregate score.
+- Preregistered upper-tail aggregate permutation `p = 1.0`.
+- Positive direction in 18/88 held-out subjects = 20.45%.
+- Receipt verdict: `FAIL`.
 
-Two synthetic controls freeze the intended distinction: an event-locked state anchor passes, while a trajectory that is merely periodic at the correct period but has no privileged `T0` phase does not automatically pass.
+### What Gate 1B supports
 
-Run the real gate with:
+It supports a negative statement about the frozen metric: the true EEGMMIDB `T0` phase is **not** a privileged return to the same coarse unsupervised EEG state. The result is not a marginal miss; its observed direction is lower than the circular-shift null rather than higher.
+
+That reversal is retained as a descriptive clue only. The opposite direction was not the preregistered alternative, so BrainLoops does not relabel it as a successful gate.
+
+### What Gate 1B does not support
+
+The failure does not erase Gate 1A's weaker timescale sensitivity. Together the receipts distinguish “structure near the known task-clock timescale” from “return to the identical coarse state at the true task phase.”
+
+Gate 1B also does not show that the brain lacks recurrent dynamics. Its metric asks for repeated state identity, which can fail if the same experimental boundary repeatedly drives similar **transitions** from different history-dependent starting states.
+
+Artifact burden does not provide an obvious explanation for the failure in the committed receipt: all task runs completed, and correlations between clipping burden and the Gate-1B score/effect were small in the receipt analysis. The EDF annotation warnings seen during loading therefore did not manifest as skipped runs.
+
+Under the frozen dataset ladder, Gate 1B `FAIL` keeps LEMON blocked.
+
+## Gate 1C — repeated T0 transition geometry
+
+Status: implementation and synthetic tests complete; real EEGMMIDB receipt pending.
+
+Gate 1C was designed **after observing Gate 1B**. It is therefore a mechanistic follow-up on the same dataset, not an independent confirmatory test and not a rescue of Gate 1B.
+
+The primary question changes from “does `T0` return to the same point?” to “does `T0` repeatedly produce a similar local direction of change?”
+
+For each task run:
+
+1. Fit an up-to-8-dimensional PCA trajectory from EEG features without annotations.
+2. Convert `T0` onsets to the nearest feature epochs.
+3. With half-window `w = 1` by default, form a symmetric transition vector
+   `v_i = mean(z[t_i+1 : t_i+w+1]) - mean(z[t_i-w : t_i])`.
+4. Normalize valid nonzero transition vectors and use their mean off-diagonal pairwise cosine similarity as the primary score.
+5. Build the null by circularly shifting all event centers through the valid interior of the **fixed PCA trajectory**. The EEG trajectory is not shuffled or refit.
+6. Aggregate runs by subject and apply the same deterministic development/held-out split as Gates 1A/1B.
+
+The primary numerical rule remains aggregate one-sided permutation `p <= 0.05` plus positive direction in at least `2/3` of held-out subjects. Because the hypothesis was selected after Gate 1B on the same subjects, a PASS would mean only that repeated transition geometry is present in this follow-up analysis.
+
+Synthetic tests freeze two distinctions before the real Gate-1C receipt is inspected: a repeatedly injected event-locked transition direction passes, while a smooth trajectory that is merely periodic at the correct interval does not automatically pass.
+
+### Secondary history diagnostic
+
+Gate 1C also records, without using it for the primary verdict, whether transition vectors are more similar after the same preceding task label (`T1/T1` or `T2/T2`) than after different preceding labels (`T1/T2`). The reported `history_delta` is
+
+```text
+mean cosine(same preceding task) - mean cosine(different preceding task)
+```
+
+This is exploratory and explicitly marked `history_diagnostic_is_primary = false` in the receipt.
+
+Run the real follow-up with:
 
 ```bash
-brainloops gate1b \
+brainloops gate1c \
   --data "E:\\DocsHouse\\575 45 degree angle is real in brain\\physionet.org\\files" \
   --n-null 99 \
-  --output results/receipts/gate1b-eegmmidb.json \
+  --output results/receipts/gate1c-eegmmidb.json \
   --resume
 ```
 
-The confirmatory rule remains aggregate `p <= 0.05` plus positive direction in at least `2/3` of held-out subjects. LEMON remains blocked until this receipt exists and survives that rule.
+The receipt records `analysis_scope = post_gate1b_followup_same_dataset`. Whatever Gate 1C finds, Gate 1B remains `FAIL` and the original LEMON advancement criterion remains unsatisfied.
