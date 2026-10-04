@@ -25,13 +25,21 @@ def build_parser() -> argparse.ArgumentParser:
     gate0.add_argument("--n-null", type=int, default=99)
     gate0.add_argument("--seed", type=int, default=1)
 
-    gate1 = sub.add_parser("gate1", help="validate against the EEGMMIDB task clock")
+    gate1 = sub.add_parser("gate1", help="run the EEGMMIDB timescale positive control")
     gate1.add_argument("--data", type=Path, required=True)
     gate1.add_argument("--subjects", type=int, nargs="*")
     gate1.add_argument("--n-null", type=int, default=99)
     gate1.add_argument("--output", type=Path, required=True)
     gate1.add_argument("--resume", action="store_true")
     gate1.add_argument("--seed", type=int, default=0)
+
+    gate1b = sub.add_parser("gate1b", help="test EEGMMIDB phase alignment with circular annotation shifts")
+    gate1b.add_argument("--data", type=Path, required=True)
+    gate1b.add_argument("--subjects", type=int, nargs="*")
+    gate1b.add_argument("--n-null", type=int, default=99)
+    gate1b.add_argument("--output", type=Path, required=True)
+    gate1b.add_argument("--resume", action="store_true")
+    gate1b.add_argument("--seed", type=int, default=0)
     return parser
 
 
@@ -55,6 +63,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             from experiments.gate1_eegmmidb import run_gate1
 
             payload = run_gate1(
+                data=args.data,
+                subjects=args.subjects,
+                n_null=args.n_null,
+                output=args.output,
+                resume=args.resume,
+                seed=args.seed,
+            )
+            print(payload["status"])
+            return 0 if payload["status"] in {"PASS", "FAIL", "INSUFFICIENT_DATA"} else 1
+        if args.command == "gate1b":
+            from experiments.gate1b_eegmmidb import run_gate1b
+
+            payload = run_gate1b(
                 data=args.data,
                 subjects=args.subjects,
                 n_null=args.n_null,

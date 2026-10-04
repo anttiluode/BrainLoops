@@ -12,7 +12,7 @@ from brainloops.probe import probe_features
 import brainloops.cli as cli
 
 
-def test_module_help_lists_probe_gate0_and_gate1():
+def test_module_help_lists_probe_gate0_gate1_and_gate1b():
     result = subprocess.run(
         [sys.executable, "-m", "brainloops.cli", "--help"],
         cwd=Path(__file__).resolve().parents[1],
@@ -23,6 +23,7 @@ def test_module_help_lists_probe_gate0_and_gate1():
     assert "probe" in result.stdout
     assert "gate0" in result.stdout
     assert "gate1" in result.stdout
+    assert "gate1b" in result.stdout
 
 
 def test_bad_probe_path_returns_nonzero_with_concise_error(capsys):
