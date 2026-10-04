@@ -1,0 +1,266 @@
+................s...........................F                            [100%]
+=================================== FAILURES ===================================
+___________________ test_project_builds_wheel_from_repo_root ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_project_builds_wheel_from0')
+
+    def test_project_builds_wheel_from_repo_root(tmp_path: Path) -> None:
+        repo = Path(__file__).resolve().parents[1]
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "wheel",
+                ".",
+                "--no-deps",
+                "--no-build-isolation",
+                "--wheel-dir",
+                str(tmp_path),
+            ],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+>       assert proc.returncode == 0, proc.stdout + "\n" + proc.stderr
+E       AssertionError: Processing ./.
+E           Preparing metadata (pyproject.toml): started
+E           Preparing metadata (pyproject.toml): finished with status 'done'
+E         
+E         ERROR: Exception:
+E         Traceback (most recent call last):
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/cli/base_command.py", line 109, in _run_wrapper
+E             status = _inner_run()
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/cli/base_command.py", line 102, in _inner_run
+E             return self.run(options, args)
+E                    ~~~~~~~~^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/cli/req_command.py", line 106, in wrapper
+E             return func(self, options, args)
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/commands/wheel.py", line 142, in run
+E             requirement_set = resolver.resolve(reqs, check_supported_wheels=True)
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/resolver.py", line 82, in resolve
+E             collected = self.factory.collect_root_requirements(root_reqs)
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 563, in collect_root_requirements
+E             reqs = list(
+E                 self._make_requirements_from_install_req(
+E             ...<2 lines>...
+E                 )
+E             )
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 519, in _make_requirements_from_install_req
+E             cand = self._make_base_candidate_from_link(
+E                 ireq.link,
+E             ...<2 lines>...
+E                 version=None,
+E             )
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 227, in _make_base_candidate_from_link
+E             self._link_candidate_cache[link] = LinkCandidate(
+E                                                ~~~~~~~~~~~~~^
+E                 link,
+E                 ^^^^^
+E             ...<3 lines>...
+E                 version=version,
+E                 ^^^^^^^^^^^^^^^^
+E             )
+E             ^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 325, in __init__
+E             super().__init__(
+E             ~~~~~~~~~~~~~~~~^
+E                 link=link,
+E                 ^^^^^^^^^^
+E             ...<4 lines>...
+E                 version=version,
+E                 ^^^^^^^^^^^^^^^^
+E             )
+E             ^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 167, in __init__
+E             self.dist = self._prepare()
+E                         ~~~~~~~~~~~~~^^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 245, in _prepare
+E             dist = self._prepare_distribution()
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 336, in _prepare_distribution
+E             return preparer.prepare_linked_requirement(self._ireq, parallel_builds=True)
+E                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 664, in prepare_linked_requirement
+E             return self._prepare_linked_requirement(req, parallel_builds)
+E                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 783, in _prepare_linked_requirement
+E             dist = _get_prepared_distribution(
+E                 req,
+E             ...<4 lines>...
+E                 self.allow_editables,
+E             )
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 82, in _get_prepared_distribution
+E             abstract_dist.prepare_distribution_metadata(
+E             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+E                 build_env_installer, build_isolation, check_build_deps, allow_editables
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             )
+E             ^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 81, in prepare_distribution_metadata
+E             self.req.prepare_metadata(allow_editables)
+E             ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/req/req_install.py", line 535, in prepare_metadata
+E             self.metadata_directory = generate_metadata(
+E                                       ~~~~~~~~~~~~~~~~~^
+E                 build_env=self.build_env,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 backend=self.pep517_backend,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 details=details,
+E                 ^^^^^^^^^^^^^^^^
+E             )
+E             ^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/build/metadata.py", line 34, in generate_metadata
+E             distinfo_dir = backend.prepare_metadata_for_build_wheel(metadata_dir)
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/utils/misc.py", line 755, in prepare_metadata_for_build_wheel
+E             return super().prepare_metadata_for_build_wheel(
+E                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+E                 metadata_directory=metadata_directory,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 config_settings=cs,
+E                 ^^^^^^^^^^^^^^^^^^^
+E                 _allow_fallback=_allow_fallback,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             )
+E             ^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 224, in prepare_metadata_for_build_wheel
+E             return self._call_hook(
+E                    ~~~~~~~~~~~~~~~^
+E                 "prepare_metadata_for_build_wheel",
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             ...<4 lines>...
+E                 },
+E                 ^^
+E             )
+E             ^
+E           File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 402, in _call_hook
+E             raise BackendUnavailable(
+E             ...<4 lines>...
+E             )
+E         pip._vendor.pyproject_hooks._impl.BackendUnavailable: Cannot import 'setuptools.build_meta'
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/opt/hostedtoolcache/Python/3.13.15/x64/bin/python', '-m', 'pip', 'wheel', '.', '--no-deps', '....<4 lines>...\n    )\npip._vendor.pyproject_hooks._impl.BackendUnavailable: Cannot import \'setuptools.build_meta\'\n').returncode
+
+tests/test_packaging.py:27: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_packaging.py::test_project_builds_wheel_from_repo_root - AssertionError: Processing ./.
+    Preparing metadata (pyproject.toml): started
+    Preparing metadata (pyproject.toml): finished with status 'done'
+  
+  ERROR: Exception:
+  Traceback (most recent call last):
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/cli/base_command.py", line 109, in _run_wrapper
+      status = _inner_run()
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/cli/base_command.py", line 102, in _inner_run
+      return self.run(options, args)
+             ~~~~~~~~^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/cli/req_command.py", line 106, in wrapper
+      return func(self, options, args)
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/commands/wheel.py", line 142, in run
+      requirement_set = resolver.resolve(reqs, check_supported_wheels=True)
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/resolver.py", line 82, in resolve
+      collected = self.factory.collect_root_requirements(root_reqs)
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 563, in collect_root_requirements
+      reqs = list(
+          self._make_requirements_from_install_req(
+      ...<2 lines>...
+          )
+      )
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 519, in _make_requirements_from_install_req
+      cand = self._make_base_candidate_from_link(
+          ireq.link,
+      ...<2 lines>...
+          version=None,
+      )
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 227, in _make_base_candidate_from_link
+      self._link_candidate_cache[link] = LinkCandidate(
+                                         ~~~~~~~~~~~~~^
+          link,
+          ^^^^^
+      ...<3 lines>...
+          version=version,
+          ^^^^^^^^^^^^^^^^
+      )
+      ^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 325, in __init__
+      super().__init__(
+      ~~~~~~~~~~~~~~~~^
+          link=link,
+          ^^^^^^^^^^
+      ...<4 lines>...
+          version=version,
+          ^^^^^^^^^^^^^^^^
+      )
+      ^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 167, in __init__
+      self.dist = self._prepare()
+                  ~~~~~~~~~~~~~^^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 245, in _prepare
+      dist = self._prepare_distribution()
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 336, in _prepare_distribution
+      return preparer.prepare_linked_requirement(self._ireq, parallel_builds=True)
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 664, in prepare_linked_requirement
+      return self._prepare_linked_requirement(req, parallel_builds)
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 783, in _prepare_linked_requirement
+      dist = _get_prepared_distribution(
+          req,
+      ...<4 lines>...
+          self.allow_editables,
+      )
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 82, in _get_prepared_distribution
+      abstract_dist.prepare_distribution_metadata(
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+          build_env_installer, build_isolation, check_build_deps, allow_editables
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      )
+      ^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 81, in prepare_distribution_metadata
+      self.req.prepare_metadata(allow_editables)
+      ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/req/req_install.py", line 535, in prepare_metadata
+      self.metadata_directory = generate_metadata(
+                                ~~~~~~~~~~~~~~~~~^
+          build_env=self.build_env,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+          backend=self.pep517_backend,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          details=details,
+          ^^^^^^^^^^^^^^^^
+      )
+      ^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/operations/build/metadata.py", line 34, in generate_metadata
+      distinfo_dir = backend.prepare_metadata_for_build_wheel(metadata_dir)
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_internal/utils/misc.py", line 755, in prepare_metadata_for_build_wheel
+      return super().prepare_metadata_for_build_wheel(
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+          metadata_directory=metadata_directory,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          config_settings=cs,
+          ^^^^^^^^^^^^^^^^^^^
+          _allow_fallback=_allow_fallback,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      )
+      ^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 224, in prepare_metadata_for_build_wheel
+      return self._call_hook(
+             ~~~~~~~~~~~~~~~^
+          "prepare_metadata_for_build_wheel",
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      ...<4 lines>...
+          },
+          ^^
+      )
+      ^
+    File "/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 402, in _call_hook
+      raise BackendUnavailable(
+      ...<4 lines>...
+      )
+  pip._vendor.pyproject_hooks._impl.BackendUnavailable: Cannot import 'setuptools.build_meta'
+  
+assert 2 == 0
+ +  where 2 = CompletedProcess(args=['/opt/hostedtoolcache/Python/3.13.15/x64/bin/python', '-m', 'pip', 'wheel', '.', '--no-deps', '....<4 lines>...\n    )\npip._vendor.pyproject_hooks._impl.BackendUnavailable: Cannot import \'setuptools.build_meta\'\n').returncode
+1 failed, 43 passed, 1 skipped in 23.59s
