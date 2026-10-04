@@ -77,8 +77,6 @@ For each unsupervised state coarse-graining (`k = 6, 10, 20`), it samples the st
 
 A deliberately important synthetic control is included: a trajectory that is perfectly periodic at the correct period but has no special `T0` phase must **not** automatically pass Gate 1B. An event-locked anchor does pass.
 
-Run:
-
 ```bash
 brainloops gate1b \
   --data /path/to/eegmmidb \
@@ -87,17 +85,43 @@ brainloops gate1b \
   --resume
 ```
 
-Gate 1B uses the same held-out-subject rule as Gate 1A: aggregate one-sided permutation `p <= 0.05` and positive direction in at least `2/3` of held-out subjects. A real Gate-1B receipt is required before BrainLoops advances to resting-state claims.
+The real 109-subject receipt is now committed and Gate 1B is a **clean FAIL**. All 1,308 task runs completed; none were skipped. In the 88 held-out subjects, the observed aggregate median exact-state recurrence was `0.142857`, versus a circular-shift null median of `0.166667`. Every one of the 99 sampled aggregate null scores was at least as large as the observed score, so the preregistered upper-tail permutation value is `p = 1.0`. Only 18/88 held-out subjects (20.45%) were in the predicted positive direction.
+
+The negative is therefore stronger than a near miss: the true `T0` phase was not a privileged return to the same coarse EEG state, and the observed direction was lower rather than higher than the null. The opposite direction was not preregistered, so it is preserved as a descriptive clue rather than relabeled as a positive gate. Gate 1B remains frozen as `FAIL`.
+
+### Gate 1C — repeated T0 transition geometry
+
+Gate 1B asked whether the brain returns to the **same point** at `T0`. Gate 1C asks the follow-up suggested by that failure: does `T0` repeatedly invoke a similar **local state transformation** even when its starting/ending state differs?
+
+Gate 1C fits the continuous PCA trajectory without annotations. For each usable `T0` event it forms a symmetric transition vector
+
+```text
+v_i = mean(z after T0_i) - mean(z before T0_i)
+```
+
+with one feature epoch on each side by default. The primary score is the mean pairwise cosine similarity of the normalized `v_i` vectors. Its null circularly shifts all event centers through the valid interior of the **fixed PCA trajectory**, so the EEG dynamics remain untouched while only external clock phase changes. An event-locked repeated direction must pass the synthetic control; a smooth period-only trajectory must not automatically pass.
+
+A secondary receipt field compares transition-vector similarity after the same preceding task label (`T1` vs `T1`, `T2` vs `T2`) with different preceding labels. That is explicitly exploratory: it cannot rescue the primary Gate-1C score.
+
+```bash
+brainloops gate1c \
+  --data /path/to/eegmmidb \
+  --n-null 99 \
+  --output results/receipts/gate1c-eegmmidb.json \
+  --resume
+```
+
+Gate 1C uses the same numerical rule (`p <= 0.05` and positive direction in at least `2/3` of the deterministic held-out split), but it is **not an independent confirmation**: it was designed after seeing Gate 1B and reuses EEGMMIDB. Receipts mark this scope as `post_gate1b_followup_same_dataset`. A Gate-1C pass would support repeated transition geometry; it would not turn Gate 1B into a pass.
 
 ## Dataset ladder
 
 Phase 1 uses **EEGMMIDB** as a known-clock instrument test, not as the primary intrinsic-loop dataset.
 
-If Gate 1B passes, the next planned dataset is **LEMON (MPI Leipzig Mind-Brain-Body EEG)**: healthy resting EEG with recordings long enough to test multi-second recurrence across many subjects. Eyes-open and eyes-closed blocks will be handled separately so the block alternation cannot create the primary result.
+Gate 1B failed its frozen phase-alignment rule, so the planned **LEMON (MPI Leipzig Mind-Brain-Body EEG)** resting-state step remains blocked. Gate 1C is a mechanistic follow-up on EEGMMIDB and does not reopen that ladder by itself.
 
 **CHB-MIT** is reserved for later long-duration/pathology stress testing. It will not be pooled with healthy resting EEG or used to claim normal brain-loop organization.
 
-LEMON/Gates 2–3 and the MultipleTemporalLenses memory bridge/Gate 4 are intentionally deferred until Gate 1B survives.
+LEMON/Gates 2–3 and the MultipleTemporalLenses memory bridge/Gate 4 remain deferred under the original ladder.
 
 ## Probe one EDF
 
@@ -143,17 +167,19 @@ experiments/
   gate0_synthetic.py
   gate1_eegmmidb.py
   gate1b_eegmmidb.py
+  gate1c_eegmmidb.py
 results/
   RESULTS.md
   receipts/
 docs/superpowers/
 ```
 
-The original design and implementation plan are frozen under `docs/superpowers/`; `results/RESULTS.md` records the Gate-1A correction rather than rewriting that history.
+The original design and implementation plan are frozen under `docs/superpowers/`; `results/RESULTS.md` records later corrections and observed results without rewriting that history.
 
 ## Status
 
 - Gate 0 synthetic truth: **PASS**, implemented and frozen.
 - Gate 1A EEGMMIDB timescale positive control: **PASS** on the committed 109-subject receipt (`p = 0.01`, 73/88 held-out positive), with the state-shuffle-null limitation documented.
-- Gate 1B fixed-timeline phase alignment: implemented with synthetic positive and period-only negative controls; **real EEGMMIDB receipt pending**.
-- LEMON resting-state work: deferred until Gate 1B survives.
+- Gate 1B fixed-timeline phase alignment: **FAIL** on the committed 109-subject receipt (`p = 1.0`, 18/88 held-out positive; observed median `0.142857` vs null median `0.166667`).
+- Gate 1C repeated T0 transition geometry: implemented and synthetic-tested; **real EEGMMIDB receipt pending**. It is a post-Gate-1B same-dataset follow-up, not independent confirmation.
+- LEMON resting-state work: **blocked by Gate 1B FAIL** under the frozen ladder.
