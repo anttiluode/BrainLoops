@@ -40,6 +40,15 @@ def build_parser() -> argparse.ArgumentParser:
     gate1b.add_argument("--output", type=Path, required=True)
     gate1b.add_argument("--resume", action="store_true")
     gate1b.add_argument("--seed", type=int, default=0)
+
+    gate1c = sub.add_parser("gate1c", help="test repeated T0 transition geometry against circular clock shifts")
+    gate1c.add_argument("--data", type=Path, required=True)
+    gate1c.add_argument("--subjects", type=int, nargs="*")
+    gate1c.add_argument("--n-null", type=int, default=99)
+    gate1c.add_argument("--output", type=Path, required=True)
+    gate1c.add_argument("--resume", action="store_true")
+    gate1c.add_argument("--seed", type=int, default=0)
+    gate1c.add_argument("--half-window", type=int, default=1)
     return parser
 
 
@@ -82,6 +91,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 output=args.output,
                 resume=args.resume,
                 seed=args.seed,
+            )
+            print(payload["status"])
+            return 0 if payload["status"] in {"PASS", "FAIL", "INSUFFICIENT_DATA"} else 1
+        if args.command == "gate1c":
+            from experiments.gate1c_eegmmidb import run_gate1c
+
+            payload = run_gate1c(
+                data=args.data,
+                subjects=args.subjects,
+                n_null=args.n_null,
+                output=args.output,
+                resume=args.resume,
+                seed=args.seed,
+                half_window=args.half_window,
             )
             print(payload["status"])
             return 0 if payload["status"] in {"PASS", "FAIL", "INSUFFICIENT_DATA"} else 1
