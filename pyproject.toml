@@ -17,3 +17,7 @@ test = ["pytest>=8"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["brainloops*", "experiments*"]
+exclude = ["results*", "tests*", "docs*"]
