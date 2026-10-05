@@ -186,6 +186,13 @@ def run_r1(
     if n_null < 1:
         raise ValueError("n_null must be positive")
     subjects = sorted(discover_subjects(data, subject_ids=subject_ids), key=lambda x: x.subject_id)
+    if not subjects:
+        raise ValueError(
+            f"No eligible raw LEMON subjects found in {data}. "
+            "r1-lemon requires BrainVision .vhdr files inside sub-... folders "
+            "with their .vmrk and .eeg companions. EEGMMIDB EDF recordings "
+            "are inputs for gate1/gate1b/gate1c. Check --data and any --subjects filter."
+        )
     config = {
         "code_version": __version__,
         "seed": int(seed),
@@ -305,6 +312,17 @@ def run_r1(
     return payload
 
 
+def print_run_summary(payload: dict[str, object]) -> None:
+    print(payload["status"])
+    if payload["status"] == "INSUFFICIENT_DATA":
+        config = payload["config"]
+        print(f"Discovered LEMON subjects: {len(config['subject_ids'])}")
+        print(f"Usable held-out EC subjects: {payload['primary_ec']['n_subjects']} (required: 20)")
+        print(f"Null replicates: {config['n_null']} (required: 19)")
+        skipped = sum(row.get("status") == "SKIP" for row in payload["subject_conditions"])
+        print(f"Skipped subject-conditions: {skipped}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run BrainLoops R1 on LEMON resting EEG")
     parser.add_argument("--data", type=Path, required=True)
@@ -314,8 +332,12 @@ def main() -> int:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
-    payload = run_r1(args.data, subject_ids=args.subjects, n_null=args.n_null, output=args.output, resume=args.resume, seed=args.seed)
-    print(payload["status"])
+    try:
+        payload = run_r1(args.data, subject_ids=args.subjects, n_null=args.n_null, output=args.output, resume=args.resume, seed=args.seed)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print_run_summary(payload)
     return 0 if payload["status"] in {"PASS_LINEAR", "PASS_BEYOND_LINEAR", "FAIL", "INSUFFICIENT_DATA"} else 1
 
 

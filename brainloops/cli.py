@@ -56,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
     r1s.add_argument("--seed", type=int, default=1)
 
     r1 = sub.add_parser("r1-lemon", help="run R1 on LEMON raw resting BrainVision EEG")
-    r1.add_argument("--data", type=Path, required=True)
+    r1.add_argument("--data", type=Path, required=True, help="extracted raw LEMON root containing sub-... folders and .vhdr/.vmrk/.eeg files")
     r1.add_argument("--subjects", nargs="*")
     r1.add_argument("--n-null", type=int, default=99)
     r1.add_argument("--output", type=Path, required=True)
@@ -105,9 +105,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(payload["status"])
             return 0 if payload["status"] == "PASS" else 1
         if args.command == "r1-lemon":
-            from experiments.r1_lemon import run_r1
+            from experiments.r1_lemon import print_run_summary, run_r1
             payload = run_r1(data=args.data, subject_ids=args.subjects, n_null=args.n_null, output=args.output, resume=args.resume, seed=args.seed)
-            print(payload["status"])
+            print_run_summary(payload)
             return 0 if payload["status"] in {"PASS_LINEAR", "PASS_BEYOND_LINEAR", "FAIL", "INSUFFICIENT_DATA"} else 1
     except (FileNotFoundError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
