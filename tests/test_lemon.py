@@ -85,6 +85,31 @@ def test_parse_rest_blocks_rejects_non_alternating_or_nonincreasing_markers():
         parse_rest_blocks(_annotations([0, 120, 60], ["S200", "S210", "S200"]), 180.0)
 
 
+def test_parse_rest_blocks_groups_two_second_refreshes_into_physical_blocks():
+    # Official raw LEMON markers refresh the condition 30 times per minute.
+    # Treating each pulse as a block either rejects valid recordings or creates
+    # two-second fragments that cannot support the frozen recurrence lag grid.
+    onsets = [6.0 + block * 60.0 + pulse * 2.0 for block in range(16) for pulse in range(30)]
+    descriptions = ["Stimulus/S 210" if block % 2 == 0 else "Stimulus/S 200"
+                    for block in range(16) for _ in range(30)]
+    # The source's 2,500 Hz marker clock has occasional one-sample jitter.
+    onsets[1] += 0.0004
+    blocks = parse_rest_blocks(_annotations(onsets, descriptions), duration_s=970.0)
+    assert len(blocks) == 16
+    assert sum(block.condition == "EC" for block in blocks) == 8
+    assert sum(block.condition == "EO" for block in blocks) == 8
+    assert [(block.condition, block.start_s, block.stop_s) for block in blocks[:3]] == [
+        ("EC", 6.0, 66.0), ("EO", 66.0, 126.0), ("EC", 126.0, 186.0),
+    ]
+    assert (blocks[-1].condition, blocks[-1].start_s, blocks[-1].stop_s) == ("EO", 906.0, 970.0)
+    assert [block.index for block in blocks] == list(range(16))
+
+
+def test_parse_rest_blocks_does_not_bridge_a_missing_refresh_or_condition_boundary():
+    with pytest.raises(ValueError, match="alternate"):
+        parse_rest_blocks(_annotations([0, 2, 60, 120], ["S200", "S200", "S200", "S210"]), 180.0)
+
+
 class _FakeRaw:
     def __init__(self, sfreq=100.0):
         self.info = {"sfreq": sfreq}
@@ -208,7 +233,8 @@ def test_load_subject_conditions_preserves_valid_ec_when_eo_is_constant(monkeypa
 @pytest.mark.parametrize("codepage,parent_folder", [
     ("UTF-8", "plain-data"), ("ANSI", "ä-data"), ("ANSI", "測定データ"),
 ])
-def test_real_brainvision_read_resolves_renamed_lemon_companions_without_editing_sources(tmp_path, codepage, parent_folder):
+@pytest.mark.parametrize("refresh_markers", [False, True])
+def test_real_brainvision_read_resolves_renamed_lemon_companions_without_editing_sources(tmp_path, codepage, parent_folder, refresh_markers):
     from brainloops.datasets.lemon import discover_subjects, load_subject_conditions
 
     subject_id = "sub-032301"
@@ -232,8 +258,11 @@ def test_real_brainvision_read_resolves_renamed_lemon_companions_without_editing
         f"[Common Infos]\nCodepage={codepage}\nDataFile=sub-010002.eeg\n"
         "[Marker Infos]\n"
         + "\n".join(
-            f"Mk{i + 1}=Stimulus,S {200 if i % 2 == 0 else 210},{i * 2500 + 1},1,0"
-            for i in range(8)
+            f"Mk{number + 1}=Stimulus,S {200 if block % 2 == 0 else 210},{block * 2500 + pulse * 100 + 1},1,0"
+            for number, (block, pulse) in enumerate(
+                (block, pulse) for block in range(8)
+                for pulse in (range(0, 25, 2) if refresh_markers else (0,))
+            )
         ) + "\n", encoding="utf-8",
     )
     rng = np.random.default_rng(103)

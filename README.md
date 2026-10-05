@@ -206,6 +206,25 @@ usable held-out EC count, null count, and skipped subject-condition count;
 individual skip reasons are retained in the JSON receipt. A folder with no
 eligible raw LEMON subjects produces an input error before writing a receipt.
 
+Raw LEMON's `S200`/`S210` condition codes repeat every two seconds within a
+physical block. The adapter groups these refresh pulses and starts a new block
+only when the condition changes. It accepts up to 20 ms of refresh-clock
+rounding; ambiguous same-condition gaps and non-increasing onsets still fail
+explicitly. Recurrence pairs never cross an EC/EO boundary.
+
+After updating an installation and adding more subjects, use a fresh canonical
+receipt to keep the earlier exploratory run separate:
+
+```bat
+brainloops r1-lemon --data "E:\LEMON-raw" --n-null 99 --output results\receipts\r1-lemon-full.json --resume --retry-skipped
+```
+
+This computes the available subjects even if fewer than 20 held-out EC subjects
+are usable; the canonical verdict then remains `INSUFFICIENT_DATA`. An MNE
+warning about annotations outside the data range is a separate file/timing
+issue, not an alternation error. The marker repair does not restore absent EEG
+samples or guarantee that every downloaded recording is usable.
+
 ### Small-sample exploratory run (including eight downloaded subjects)
 
 For an existing installation whose dependencies are already installed, update
