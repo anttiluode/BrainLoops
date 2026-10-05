@@ -203,3 +203,47 @@ def test_load_subject_conditions_preserves_valid_ec_when_eo_is_constant(monkeypa
     assert set(result) == {"EC"}
     assert len(result["EC"].blocks) == 4
     assert all(np.any(np.ptp(batch.X, axis=0) > 0) for batch in result["EC"].blocks)
+
+
+@pytest.mark.parametrize("codepage,parent_folder", [
+    ("UTF-8", "plain-data"), ("ANSI", "ä-data"), ("ANSI", "測定データ"),
+])
+def test_real_brainvision_read_resolves_renamed_lemon_companions_without_editing_sources(tmp_path, codepage, parent_folder):
+    from brainloops.datasets.lemon import discover_subjects, load_subject_conditions
+
+    subject_id = "sub-032301"
+    folder = tmp_path / parent_folder / subject_id / "RSEEG"
+    folder.mkdir(parents=True)
+    header = folder / f"{subject_id}.vhdr"
+    marker = folder / f"{subject_id}.vmrk"
+    data = folder / f"{subject_id}.eeg"
+    # The public LEMON files were renamed, but internal references can retain
+    # the older subject ID. Exercise MNE's real parser, not a mocked Raw object.
+    header.write_text(
+        "Brain Vision Data Exchange Header File Version 1.0\n"
+        f"[Common Infos]\nCodepage={codepage}\nDataFile=sub-010002.eeg\n"
+        "MarkerFile=sub-010002.vmrk\nDataFormat=BINARY\n"
+        "DataOrientation=MULTIPLEXED\nNumberOfChannels=2\nSamplingInterval=10000\n"
+        "[Binary Infos]\nBinaryFormat=IEEE_FLOAT_32\n"
+        "[Channel Infos]\nCh1=Fz,,1,uV\nCh2=Cz,,1,uV\n", encoding="utf-8",
+    )
+    marker.write_text(
+        "Brain Vision Data Exchange Marker File, Version 1.0\n"
+        f"[Common Infos]\nCodepage={codepage}\nDataFile=sub-010002.eeg\n"
+        "[Marker Infos]\n"
+        + "\n".join(
+            f"Mk{i + 1}=Stimulus,S {200 if i % 2 == 0 else 210},{i * 2500 + 1},1,0"
+            for i in range(8)
+        ) + "\n", encoding="utf-8",
+    )
+    rng = np.random.default_rng(103)
+    rng.normal(size=(20000, 2)).astype("<f4").tofile(data)
+    original_header, original_marker = header.read_bytes(), marker.read_bytes()
+    loaded = load_subject_conditions(discover_subjects(tmp_path)[0])
+    recordings = discover_recordings(tmp_path)
+    assert recordings[0].data_path == data
+    assert recordings[0].marker_path == marker
+    assert set(loaded) == {"EC", "EO"}
+    assert all(len(features.blocks) == 4 for features in loaded.values())
+    assert header.read_bytes() == original_header
+    assert marker.read_bytes() == original_marker

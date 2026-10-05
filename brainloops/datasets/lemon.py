@@ -4,6 +4,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Literal
 
 import mne
@@ -75,11 +76,22 @@ def _subject_from_path(path: Path) -> str | None:
     return None
 
 
-def _header_references(path: Path) -> tuple[Path, Path]:
+def _brainvision_text(path: Path) -> tuple[str, str]:
+    data = path.read_bytes()
+    declaration = re.search(br"(?im)^[ \t]*Codepage[ \t]*=[ \t]*([^\r\n]+)", data)
+    encoding = declaration.group(1).decode("ascii").strip() if declaration else "utf-8"
+    if encoding.upper() == "ANSI":
+        encoding = "cp1252"
     try:
-        text = path.read_text(encoding="utf-8")
+        return data.decode(encoding), encoding
     except UnicodeDecodeError:
-        text = path.read_text(encoding="latin-1")
+        return data.decode("latin-1"), "latin-1"
+    except LookupError as exc:
+        raise ValueError(f"unknown BrainVision codepage {encoding!r}: {path}") from exc
+
+
+def _header_references(path: Path, *, literal_only: bool = False) -> tuple[Path, Path]:
+    text, _ = _brainvision_text(path)
     values: dict[str, str] = {}
     for line in text.splitlines():
         if "=" in line:
@@ -88,13 +100,58 @@ def _header_references(path: Path) -> tuple[Path, Path]:
     if "datafile" not in values or "markerfile" not in values:
         raise ValueError(f"BrainVision header lacks companion references: {path}")
 
-    def resolve(reference: str) -> Path:
+    def resolve(reference: str, suffix: str) -> Path:
         literal = path.parent / reference
-        if literal.exists():
+        if literal_only or literal.exists():
             return literal
-        return path.parent / reference.replace("\\", "/").split("/")[-1]
+        basename = path.parent / reference.replace("\\", "/").split("/")[-1]
+        if basename.exists():
+            return basename
+        # Public LEMON downloads can retain older IDs inside renamed headers.
+        # Fall back only to this header's same-stem companion, never another ID.
+        renamed = path.with_suffix(suffix)
+        return renamed if renamed.is_file() else basename
 
-    return resolve(values["markerfile"]), resolve(values["datafile"])
+    return resolve(values["markerfile"], ".vmrk"), resolve(values["datafile"], ".eeg")
+
+
+def _replace_reference(text: str, key: str, value: str) -> str:
+    return re.sub(
+        rf"(?im)^([ \t]*{re.escape(key)}[ \t]*=[ \t]*)[^\r\n]*",
+        lambda match: match.group(1) + value,
+        text,
+    )
+
+
+def _utf8_brainvision_text(text: str) -> str:
+    if re.search(r"(?im)^[ \t]*Codepage[ \t]*=", text):
+        return _replace_reference(text, "Codepage", "UTF-8")
+    return re.sub(
+        r"(?im)^(\[Common Infos\][ \t]*)(\r?\n)",
+        r"\1\2Codepage=UTF-8\2", text, count=1,
+    )
+
+
+def _read_lemon_raw(path: Path):
+    if not path.is_file():
+        return mne.io.read_raw_brainvision(str(path), preload=True, verbose=False)
+    marker, data = _header_references(path)
+    if ((marker, data) == _header_references(path, literal_only=True)
+            or not marker.is_file() or not data.is_file()):
+        return mne.io.read_raw_brainvision(str(path), preload=True, verbose=False)
+    # Repair references in temporary text files; keep the downloaded
+    # header/marker/data bytes intact. Preload completes before cleanup.
+    header_text, _ = _brainvision_text(path)
+    marker_text, _ = _brainvision_text(marker)
+    with TemporaryDirectory(prefix="brainloops-lemon-") as directory:
+        temp_header = Path(directory) / path.name
+        temp_marker = Path(directory) / marker.name
+        header_text = _replace_reference(header_text, "DataFile", str(data.resolve()))
+        header_text = _replace_reference(header_text, "MarkerFile", str(temp_marker))
+        marker_text = _replace_reference(marker_text, "DataFile", str(data.resolve()))
+        temp_header.write_text(_utf8_brainvision_text(header_text), encoding="utf-8", newline="")
+        temp_marker.write_text(_utf8_brainvision_text(marker_text), encoding="utf-8", newline="")
+        return mne.io.read_raw_brainvision(str(temp_header), preload=True, verbose=False)
 
 
 def _choose_subject_header(subject_id: str, paths: Sequence[Path]) -> Path:
@@ -277,7 +334,7 @@ def load_subject_conditions(
 ) -> dict[str, LEMONConditionFeatures]:
     if fs <= 0 or epoch_s <= 0:
         raise ValueError("fs and epoch_s must be positive")
-    raw = mne.io.read_raw_brainvision(str(subject.vhdr_path), preload=True, verbose=False)
+    raw = _read_lemon_raw(subject.vhdr_path)
     raw = _prepare_raw(raw, fs)
     by_condition, _ = _unscaled_feature_blocks(raw, epoch_s, fs, min_epochs=43)
     result: dict[str, LEMONConditionFeatures] = {}
@@ -326,6 +383,6 @@ def load_recording_feature_blocks(
     epoch_s: float = 0.5,
     fs: float = 100.0,
 ) -> dict[Condition, ConditionFeatureBlocks]:
-    raw = mne.io.read_raw_brainvision(str(recording.path), preload=True, verbose=False)
+    raw = _read_lemon_raw(recording.path)
     raw = _prepare_raw(raw, fs)
     return feature_blocks_from_raw(raw, epoch_s=epoch_s, fs=fs)

@@ -206,6 +206,45 @@ usable held-out EC count, null count, and skipped subject-condition count;
 individual skip reasons are retained in the JSON receipt. A folder with no
 eligible raw LEMON subjects produces an input error before writing a receipt.
 
+### Small-sample exploratory run (including eight downloaded subjects)
+
+For an existing installation whose dependencies are already installed, update
+the command directly from current GitHub main:
+
+```bat
+python3.13 -m pip install --force-reinstall --no-deps "https://github.com/anttiluode/BrainLoops/archive/refs/heads/main.zip"
+```
+
+Add `--exploratory` to calculate the same recurrence metrics and population nulls
+with the available held-out EC subjects, starting at one usable held-out subject.
+The lag grid, physical-block requirements, EC/EO roles, deterministic split,
+null definitions, p-value rule, and positive-fraction rule are unchanged. At least
+19 null replicates are still required. This is an explicitly exploratory result
+with limited precision; it does not meet or replace the frozen 20-subject gate.
+
+```bat
+brainloops r1-lemon --data "E:\LEMON-raw" --n-null 99 --exploratory --output results\receipts\r1-lemon-8-exploratory.json --resume --retry-skipped
+```
+
+For the eight subjects `sub-032301`–`sub-032306`, `sub-032328`, and `sub-032344`,
+seven are held out and one remains in development. The receipt retains the
+canonical `primary_ec` and `replication_eo` results alongside `exploratory_ec`
+and `exploratory_eo`; its top-level status is prefixed `EXPLORATORY_`. Zero usable
+held-out EC subjects still means `EXPLORATORY_INSUFFICIENT_DATA`. EO cannot rescue
+an EC failure.
+
+Raw LEMON downloads can contain renamed `.eeg`/`.vmrk` files whose headers still
+refer to older subject IDs, as documented in this
+[MNE support discussion](https://mne.discourse.group/t/filenotfounderror-while-using-read-raw-brainvision-since-vmrk-file-name-was-changed/5498).
+The loader now resolves a missing reference to the same header's existing
+same-stem companion and uses temporary corrected headers/markers. It does not
+change the downloaded files or infer block timings when markers are missing.
+
+If all conditions are skipped, the command now prints up to five distinct skip
+reasons; all reasons remain in the receipt. `--resume --retry-skipped` retries
+those failed conditions while preserving completed results. Use a fresh output
+filename when switching from canonical to exploratory mode, as shown above.
+
 Use `--resume` only for the same subject set and run configuration. When changing
 from the EEGMMIDB folder to raw LEMON, use a fresh output filename as above;
 an earlier empty receipt cannot be resumed with a different subject list.

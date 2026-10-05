@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import sys
+from collections import Counter
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Literal, Sequence
@@ -79,8 +80,8 @@ def aggregate_population(
     }
 
 
-def _status_from_rows(rows: Sequence[dict], n_null: int) -> dict[str, object]:
-    if n_null < 19 or len(rows) < 20:
+def _status_from_rows(rows: Sequence[dict], n_null: int, *, min_subjects: int = 20) -> dict[str, object]:
+    if n_null < 19 or len(rows) < min_subjects:
         return {
             "status": "INSUFFICIENT_DATA",
             "n_subjects": len(rows),
@@ -120,6 +121,11 @@ def _status_from_rows(rows: Sequence[dict], n_null: int) -> dict[str, object]:
 def primary_ec_status(rows: Sequence[dict], n_null: int) -> dict[str, object]:
     heldout_ec = [row for row in rows if row.get("split") == "heldout" and row.get("condition") == "EC" and "transition" in row]
     return _status_from_rows(heldout_ec, n_null)
+
+
+def exploratory_ec_status(rows: Sequence[dict], n_null: int) -> dict[str, object]:
+    heldout_ec = [row for row in rows if row.get("split") == "heldout" and row.get("condition") == "EC" and "transition" in row]
+    return _status_from_rows(heldout_ec, n_null, min_subjects=1)
 
 
 def artifact_diagnostics(rows: Sequence[dict]) -> dict[str, float | None]:
@@ -182,6 +188,8 @@ def run_r1(
     output: str | Path | None = None,
     resume: bool = False,
     seed: int = 0,
+    exploratory: bool = False,
+    retry_skipped: bool = False,
 ) -> dict[str, object]:
     if n_null < 1:
         raise ValueError("n_null must be positive")
@@ -207,10 +215,14 @@ def run_r1(
         "replication_condition": "EO",
         "subject_ids": [s.subject_id for s in subjects],
     }
+    if exploratory:
+        config["exploratory"] = True
     fingerprint = config_fingerprint(config)
     output_path = None if output is None else Path(output)
     existing = _load_resume(output_path, fingerprint) if resume and output_path is not None else None
     rows = [] if existing is None else list(existing.get("subject_conditions", []))
+    if retry_skipped:
+        rows = [row for row in rows if row.get("status") != "SKIP"]
     done = {(r["subject_id"], r["condition"]) for r in rows}
 
     development = [s.subject_id for s in subjects if is_development_subject(s.subject_id)]
@@ -224,7 +236,7 @@ def run_r1(
         "heldout_subjects": heldout,
         "subject_conditions": rows,
     }
-    if output_path is not None and existing is None:
+    if output_path is not None and (existing is None or retry_skipped):
         write_receipt(output_path, payload)
 
     for subject in subjects:
@@ -307,6 +319,14 @@ def run_r1(
             "artifact_diagnostics_ec": artifact_diagnostics(heldout_ec),
         }
     )
+    if exploratory:
+        exploratory_ec = exploratory_ec_status(rows, n_null)
+        payload.update({
+            "status": "EXPLORATORY_" + exploratory_ec["status"],
+            "canonical_status": primary["status"],
+            "exploratory_ec": exploratory_ec,
+            "exploratory_eo": _status_from_rows(heldout_eo, n_null, min_subjects=1),
+        })
     if output_path is not None:
         write_receipt(output_path, payload)
     return payload
@@ -314,13 +334,23 @@ def run_r1(
 
 def print_run_summary(payload: dict[str, object]) -> None:
     print(payload["status"])
-    if payload["status"] == "INSUFFICIENT_DATA":
+    exploratory = "exploratory_ec" in payload
+    if exploratory:
+        print(f"Canonical R1 status: {payload['canonical_status']} (requires 20 usable held-out EC subjects)")
+        print("Exploratory analysis: small sample; not the canonical population gate.")
+    if payload["status"] == "INSUFFICIENT_DATA" or exploratory:
         config = payload["config"]
         print(f"Discovered LEMON subjects: {len(config['subject_ids'])}")
-        print(f"Usable held-out EC subjects: {payload['primary_ec']['n_subjects']} (required: 20)")
+        requirement = "exploratory minimum: 1" if exploratory else "required: 20"
+        print(f"Usable held-out EC subjects: {payload['primary_ec']['n_subjects']} ({requirement})")
         print(f"Null replicates: {config['n_null']} (required: 19)")
-        skipped = sum(row.get("status") == "SKIP" for row in payload["subject_conditions"])
-        print(f"Skipped subject-conditions: {skipped}")
+        skipped = [row for row in payload["subject_conditions"] if row.get("status") == "SKIP"]
+        print(f"Skipped subject-conditions: {len(skipped)}")
+        reasons = Counter(str(row.get("reason", "unknown reason")) for row in skipped)
+        for reason, count in reasons.most_common(5):
+            print(f"  Skip reason ({count} condition(s)): {reason}")
+        if len(reasons) > 5:
+            print("  Additional skip reasons are retained in the receipt.")
 
 
 def main() -> int:
@@ -330,15 +360,17 @@ def main() -> int:
     parser.add_argument("--n-null", type=int, default=99)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--exploratory", action="store_true", help="report a labeled small-sample analysis while retaining the canonical 20-subject status")
+    parser.add_argument("--retry-skipped", action="store_true", help="retry skipped conditions when resuming, retaining completed results")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     try:
-        payload = run_r1(args.data, subject_ids=args.subjects, n_null=args.n_null, output=args.output, resume=args.resume, seed=args.seed)
+        payload = run_r1(args.data, subject_ids=args.subjects, n_null=args.n_null, output=args.output, resume=args.resume, seed=args.seed, exploratory=args.exploratory, retry_skipped=args.retry_skipped)
     except (FileNotFoundError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     print_run_summary(payload)
-    return 0 if payload["status"] in {"PASS_LINEAR", "PASS_BEYOND_LINEAR", "FAIL", "INSUFFICIENT_DATA"} else 1
+    return 0 if payload["status"].removeprefix("EXPLORATORY_") in {"PASS_LINEAR", "PASS_BEYOND_LINEAR", "FAIL", "INSUFFICIENT_DATA"} else 1
 
 
 if __name__ == "__main__":
