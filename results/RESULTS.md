@@ -144,11 +144,15 @@ Across the three EEGMMIDB gates, the increasingly narrow picture is:
 - Gate 1B: the true task phase is **not** a privileged return to the identical coarse state.
 - Gate 1C: the true task phase **is** a privileged repeated **direction of transition** through continuous PCA state space.
 
-So the useful object emerging from BrainLoops is not yet a literal cycle with a fixed return point. It is a reproducible event-aligned state-space transformation. Whether spontaneous brain dynamics contain analogous transition motifs without an external task clock remains an open question.
+The EEGMMIDB finding is a reproducible event-aligned state-space transformation.
+The separately approved R1 result below finds resting temporal structure, with
+state return reaching a stronger null tier than transition recurrence. These
+results do not identify a literal anatomical cycle or establish transfer of an
+event-derived motif into rest.
 
 ## R1 — spontaneous/resting transition recurrence
 
-Status: **implementation and synthetic calibration complete; real LEMON receipt pending**.
+Status: **canonical real LEMON PASS_LINEAR in EC and EO; state recurrence dominates the null tiers**.
 
 Frozen question:
 
@@ -163,7 +167,68 @@ The canonical synthetic receipt `results/receipts/r1-synthetic.json` passes at `
 - drifting repeated transform: transition recurrence outranks matched state recurrence, yielding a transformation-only interpretation;
 - repeated state return with variable transition direction: state recurrence dominates, preventing a transformation-only label.
 
-The real R1 analysis is not complete until raw LEMON BrainVision data are run under the frozen EC-primary / EO-replication configuration. No real LEMON result is claimed here.
+The [full real receipt](receipts/r1-lemon-full.json) was uploaded on 5 October
+2026 in commit `392f74796354c0ba9a7fb914170c32886c252793`. Its original 839,585
+bytes have SHA-256
+`5035a94994e15e2c577021f01016af6c3ae00f02da669df2272974dda4c4f632`.
+The [analysis](../docs/analysis/2026-10-05-r1-lemon.md) and
+[compact summary](receipts/r1-lemon-full-summary.json) record the result and audit.
+
+Observed canonical result:
+
+- 26 discovered subjects: three development, 23 held out.
+- 22 usable held-out subjects in EC and the same 22 in EO; 99 null replicates.
+- 50 successful subject-condition rows, each with eight usable physical blocks.
+- `sub-032309` skipped in both conditions for fewer than four usable blocks.
+- Both conditions: transition `LINEAR_LAG_RECURRENCE`, state
+  `BEYOND_LINEAR_RECURRENCE`, interpretation `STATE_RECURRENCE_DOMINANT`.
+
+| Condition | Metric / null | Real median | Aggregate null median | p | Positive subjects | Pass |
+|---|---|---:|---:|---:|---:|---|
+| EC | Transition / order | 0.050347 | 0.036764 | 0.01 | 22/22 | Yes |
+| EC | Transition / phase | 0.050347 | 0.048791 | 0.36 | 14/22 | No |
+| EC | State / order | −11.920239 | −12.380572 | 0.01 | 18/22 | Yes |
+| EC | State / phase | −11.920239 | −12.814981 | 0.01 | 22/22 | Yes |
+| EO | Transition / order | 0.049855 | 0.036719 | 0.01 | 19/22 | Yes |
+| EO | Transition / phase | 0.049855 | 0.048744 | 0.37 | 9/22 | No |
+| EO | State / order | −12.036341 | −12.711920 | 0.01 | 19/22 | Yes |
+| EO | State / phase | −12.036341 | −13.154539 | 0.01 | 22/22 | Yes |
+
+Each comparison needs `p <= 0.05` and at least two-thirds positive subjects.
+Every real/null subject statistic maximizes over the same frozen lag grid, then
+the population takes medians across subjects. `p = 0.01` is the 99-null resolution
+floor. Positive direction is not individual significance.
+
+The transition result supports temporal ordering effects compatible with the
+phase null's retained linear lag structure. Failing to reject that null does not
+prove all neural dynamics linear. State return exceeds both controls, but the
+phase tier remains an operational surrogate result: it does not isolate a
+nonlinear neural mechanism from distributional, nonstationary, or preprocessing
+effects. State-tier dominance does not compare effect sizes in different units.
+The transformation-without-matched-state-return dissociation was not the
+population result.
+
+EO agreement is within-dataset replication in the same people. LEMON supplies a
+separate dataset from EEGMMIDB, without retroactively converting Gate 1C into an
+independent confirmatory test.
+
+The public source header/marker and confirmed EEG byte length for `sub-032309`
+reproduce the reported 313-annotation warning in a metadata-only check. The
+signal length implies approximately 389 seconds, while markers continue to
+1,045 seconds, leaving three blocks per condition. This is consistent with the
+receipt's exclusion; local Windows file identity was not checked. See the
+[source metadata audit](../docs/analysis/r1-lemon-source-metadata-audit.json).
+
+Held-out median clipped feature-value fractions are 4.55% EC and 5.59% EO.
+EC clipping burden versus transition/order effect has Pearson `r = −0.121` and
+Spearman `r = −0.062`, `n = 22`; these descriptive diagnostics do not establish
+artifact-free EEG.
+
+The saved-output audit passes 1,807 checks without a mismatch, including
+independent arithmetic and frozen-runner recomputation of all population null
+arrays/verdicts. This did not rerun the 26 EEG recordings. Exact installed git
+revision, dependencies, raw-file checksums, per-block spectra, and usable-pair
+counts are not recorded in the receipt.
 
 The original Gate-1B dataset ladder remains frozen. R1 is a separately approved independent follow-up branch motivated by Gate 1C, not a reinterpretation of the Gate 1B failure.
 
@@ -177,12 +242,14 @@ controller, demonstrate a reset, or establish an anti-seizure function.
 Gate 1C compares normalized transition directions. A monotonic trajectory with
 identical increments at event times scores 1.0 without returning to a state or
 reducing its magnitude. Its PASS therefore remains a transition-geometry result.
-R1 asks whether transition motifs recur within independent resting EEG; it does
-not yet test a frozen task-derived T0 template or a cell-specific mechanism.
+R1 finds resting transition/order recurrence and stronger state-return evidence
+under its null tiers. It does not test a frozen task-derived T0 template or a
+cell-specific mechanism.
 
 Recovery consolidated the existing R1 source and regenerated its canonical
-synthetic receipt at seed 1 and 99 nulls. The four frozen controls pass. The real
-LEMON receipt remains pending.
+synthetic receipt at seed 1 and 99 nulls. The four frozen controls pass. The
+canonical real LEMON receipt is now present and analyzed above. Neither result
+establishes an inhibitory controller, reset, or anti-seizure function.
 
 ## Dataset ladder
 

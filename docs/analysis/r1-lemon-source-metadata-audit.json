@@ -1,0 +1,59 @@
+{
+  "scope": "Metadata and confirmed source EEG byte-length audit only; sparse placeholder, no EEG signal analysis.",
+  "archive_url": "https://fcp-indi.s3.amazonaws.com/data/Projects/INDI/MPI-LEMON/Compressed_tar/EEG_MPILMBB_LEMON/EEG_Raw_BIDS_ID/sub-032309.tar.gz",
+  "older_id_directory_url": "https://ftp.gwdg.de/pub/misc/MPI-Leipzig_Mind-Brain-Body-LEMON/EEG_MPILMBB_LEMON/EEG_Raw_BIDS_ID/sub-010015/RSEEG/",
+  "matching_header_and_marker_bytes": true,
+  "metadata_sha256": {
+    "vhdr": "4828b2b7634941063368210aff1d3769eaeada32f00978ebc804d4e237474220",
+    "vmrk": "d3d6c6cbb79ab227df71dcf591634f8df449822ca6b70c71094073a37b6ce7b2"
+  },
+  "source_eeg_bytes": 120586240,
+  "channels": 62,
+  "sampling_frequency_hz": 2500.0,
+  "complete_sample_frames_from_bytes": 972469,
+  "trailing_bytes_after_complete_frames": 84,
+  "mne_n_times": 972469,
+  "duration_s": 388.9876,
+  "last_marker_position_1based": 2613104,
+  "last_marker_onset_s": 1045.2412,
+  "mne_version": "1.13.2",
+  "mne_warnings": [
+    "Omitted 313 annotation(s) that were outside data range."
+  ],
+  "physical_blocks": [
+    {
+      "condition": "EC",
+      "start_s": 27.8748,
+      "stop_s": 90.204
+    },
+    {
+      "condition": "EO",
+      "start_s": 90.204,
+      "stop_s": 151.5612
+    },
+    {
+      "condition": "EC",
+      "start_s": 151.5612,
+      "stop_s": 213.5384
+    },
+    {
+      "condition": "EO",
+      "start_s": 213.5384,
+      "stop_s": 275.2756
+    },
+    {
+      "condition": "EC",
+      "start_s": 275.2756,
+      "stop_s": 336.9548
+    },
+    {
+      "condition": "EO",
+      "start_s": 336.9548,
+      "stop_s": 388.9876
+    }
+  ],
+  "retained_blocks_by_condition": {
+    "EC": 3,
+    "EO": 3
+  }
+}

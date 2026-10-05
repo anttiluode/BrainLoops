@@ -58,16 +58,21 @@ This addresses process interruptions, rather than claiming protection against
 every filesystem or hardware failure.
 
 Four regression tests reproduced these failures before the changes and pass
-afterward. The repaired full suite reports 99 passed and one external EEGMMIDB
-data test skipped. R1's real LEMON adapter remains unverified on a representative
-raw recording; its current receipt also lacks the spec's per-block spectra and
-usable-pair counts. These limits are retained in the project checkpoint.
+afterward. That recovery checkpoint reported 99 passed and one external EEGMMIDB
+data test skipped. At that point, R1's LEMON adapter had not been checked on a
+representative raw recording. Later raw compatibility checks and the canonical
+result are recorded in [project state](PROJECT_STATE.md). The receipt still
+lacks the spec's per-block spectra and usable-pair counts.
 
 ## Scientific conclusions preserved
 
 Gate 1B remains FAIL. Gate 1C remains a post-Gate-1B same-dataset transition
 result, and its preceding-task history diagnostic remains unsupported. Real
-LEMON data and an R1 real-data receipt are still pending.
+LEMON data were pending at the initial recovery checkpoint. The subsequent
+[canonical R1 LEMON receipt and analysis](analysis/2026-10-05-r1-lemon.md) now
+report PASS_LINEAR in EC and EO, with state return reaching the stronger phase
+tier. The full receipt is preserved exactly and its saved-output audit passes
+1,807 checks. The original EEG processing was not rerun for that audit.
 
 The [resonance-valve note](interpretation/2026-10-05-resonance-valves.md) records a
 plausible inhibitory-feedback hypothesis and a proposed joint memory/stability
