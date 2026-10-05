@@ -1,0 +1,90 @@
+name: Publish and verify R1 branch
+
+on:
+  push:
+    branches:
+      - feature/r1-resting-transition-recurrence
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/r1-resting-transition-recurrence
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Expand verified R1 implementation
+        run: |
+          tar -xzf .r1-publish.tar.gz
+          python - <<'PY'
+          from pathlib import Path
+
+          def insert_before(path, marker, section):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if section.splitlines()[0] in text:
+                  return
+              if marker not in text:
+                  text = text.rstrip() + '\n\n' + section.rstrip() + '\n'
+              else:
+                  text = text.replace(marker, section.rstrip() + '\n\n' + marker, 1)
+              p.write_text(text, encoding='utf-8')
+
+          readme_section = Path('.r1/README_SECTION.md').read_text(encoding='utf-8')
+          results_section = Path('.r1/RESULTS_SECTION.md').read_text(encoding='utf-8')
+          insert_before('README.md', '## Dataset ladder', readme_section)
+          insert_before('results/RESULTS.md', '## Dataset ladder', results_section)
+
+          p = Path('README.md')
+          text = p.read_text(encoding='utf-8')
+          status_line = '- R1 resting transition recurrence: **implementation + synthetic calibration PASS**; real LEMON receipt pending; independent follow-up branch, not a rewrite of Gate 1B.'
+          if status_line not in text:
+              text = text.rstrip() + '\n' + status_line + '\n'
+              p.write_text(text, encoding='utf-8')
+          PY
+          rm -rf .r1
+
+      - name: Install test dependencies
+        run: python -m pip install -e '.[test]'
+
+      - name: Run full suite
+        run: python -m pytest -q
+
+      - name: Verify canonical R1 synthetic receipt
+        run: |
+          python experiments/r1_synthetic.py --n-null 99 --seed 1 --output /tmp/r1-synthetic-final.json
+          cmp /tmp/r1-synthetic-final.json results/receipts/r1-synthetic.json
+
+      - name: Verify wheel and installed CLI
+        run: |
+          rm -rf dist build /tmp/brainloops-r1-install
+          python -m pip wheel . --no-deps --no-build-isolation -w dist
+          python -m pip install --target /tmp/brainloops-r1-install dist/*.whl
+          PYTHONPATH=/tmp/brainloops-r1-install python -m brainloops.cli --help | tee /tmp/help.txt
+          grep -q 'r1-synthetic' /tmp/help.txt
+          grep -q 'r1-lemon' /tmp/help.txt
+          PYTHONPATH=/tmp/brainloops-r1-install python - <<'PY'
+          import brainloops
+          import experiments.r1_synthetic
+          import experiments.r1_lemon
+          print('clean-target imports OK')
+          PY
+
+      - name: Remove publication scaffolding and commit verified tree
+        run: |
+          rm -rf dist build
+          git rm .r1-publish.tar.gz .github/workflows/r1-publish.yml
+          git add brainloops experiments tests README.md results docs
+          git status --short
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: implement R1 resting transition recurrence'
+          git push origin HEAD:feature/r1-resting-transition-recurrence
