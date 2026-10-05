@@ -10,9 +10,11 @@ The same controller could affect memory duration, contextual sensitivity, and
 stability. A temporal "lens" and a resonance "valve" could therefore describe
 different effects of one control operation.
 
-BrainLoops has not identified that controller in EEG. The measured finding is
-repeated event-aligned transition direction. Connecting it to Martinotti cells,
-a reset, or seizure prevention remains a hypothesis.
+BrainLoops has not identified that controller in EEG. The measured findings are
+repeated event-aligned transition direction and, in the separate resting R1 run,
+temporal structure with state return reaching a stronger null tier than
+transitions. Connecting these to Martinotti cells, a reset, or seizure prevention
+remains a hypothesis.
 
 ## Biological grounding and limits
 
@@ -147,6 +149,28 @@ the task generator lives in
 Tupsu tests burst-dependent episode compression. Its reported boundary-selection
 comparison does not isolate stabilization of a recurrent excitatory population,
 so it cannot by itself assign inhibition a primarily protective biological role.
+
+## Update: the canonical resting R1 receipt
+
+The [real LEMON analysis](../analysis/2026-10-05-r1-lemon.md) now reports
+`PASS_LINEAR` in primary EC and replication EO, with the same 22 usable held-out
+people and 99 nulls. Transition recurrence beats the ordering control (`p = 0.01`
+in both), while phase-preserving controls produce comparable scores (`p = 0.36`
+EC and `0.37` EO). State return beats both controls (`p = 0.01`), yielding
+`STATE_RECURRENCE_DOMINANT` under the ordinal null tiers.
+
+This narrows the proposed recurring-transformation-without-state-return account:
+the resting population result has stronger state-return evidence. Phase-null
+rejection remains conditional on that surrogate's constraints, which do not
+retain marginal distributions or nonstationary amplitude organization. R1 has
+not isolated a nonlinear neural mechanism or measured gain regulation, inhibition,
+a reset, or seizure protection. It also has not tested a frozen task-derived T0
+template at rest. Gate 1B remains FAIL, and Gate 1C remains a same-dataset follow-up.
+
+The saved receipt passed 1,807 consistency checks without a mismatch; original
+EEG processing was not rerun. One held-out recording was excluded for insufficient
+blocks; its public metadata reproduce the reported annotation warning. The
+analysis records this source check and the remaining provenance limitations.
 
 ## Next informative tests
 

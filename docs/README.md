@@ -4,6 +4,7 @@
 |---|---|
 | [Project state](PROJECT_STATE.md) | Current implementation, evidence, and next unfinished work |
 | [Results ledger](../results/RESULTS.md) | Gate verdicts, numerical results, and their limits |
+| [Canonical R1 LEMON analysis](analysis/2026-10-05-r1-lemon.md) | Real resting-data result, null distributions, subject exclusions, and scientific limits |
 | [Resonance valves](interpretation/2026-10-05-resonance-valves.md) | Inhibitory-feedback hypothesis, EEG interpretation, and proposed tests |
 | [Recovery record](REPOSITORY_RECOVERY.md) | Timeout interruptions, restored receipts, and branch reconciliation |
 | [Archive](archive/README.md) | Older publication helper and summary retained with provenance |

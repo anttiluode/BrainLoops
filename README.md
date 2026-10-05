@@ -10,7 +10,14 @@
 | Gate 1C | PASS, same-dataset follow-up | Repeated local transition direction at T0 |
 | Gate 1C history diagnostic | Not supported | Matching preceding T1/T2 labels did not increase similarity |
 | R1 synthetic | PASS | Calibration of the separate resting-transition instrument |
-| R1 real LEMON | Pending | No real resting-data verdict yet |
+| R1 real LEMON | PASS_LINEAR in EC and EO | 22 held-out subjects; state recurrence reaches the stronger phase tier |
+
+The first canonical resting-EEG receipt is now available. Transitions beat the
+order-destroying null (`p = 0.01` in EC and EO), while phase-preserving controls
+produce comparable transition scores (`p = 0.36` / `0.37`). State return passes
+both controls (`p = 0.01`), giving `STATE_RECURRENCE_DOMINANT`. Read the
+[full LEMON analysis and figure](docs/analysis/2026-10-05-r1-lemon.md) for the
+evidence, annotation warning, and limits of the biological interpretation.
 
 Read the [results ledger](results/RESULTS.md) for the numerical evidence,
 [resonance-valve interpretation](docs/interpretation/2026-10-05-resonance-valves.md)
@@ -174,7 +181,41 @@ brainloops r1-synthetic --n-null 99 --seed 1 --output results/receipts/r1-synthe
 
 ### Real LEMON run
 
-A real LEMON receipt is **pending**. No real-data verdict is inferred from the synthetic calibration.
+The [canonical full receipt](results/receipts/r1-lemon-full.json) contains 26
+discovered subjects, three in development and 23 held out. One held-out subject
+was excluded in both conditions for insufficient physical blocks, leaving 22
+usable subjects in each condition, with eight blocks each and 99 null replicates.
+EC and EO both report **`PASS_LINEAR`**, with transition class
+`LINEAR_LAG_RECURRENCE`, state class `BEYOND_LINEAR_RECURRENCE`, and interpretation
+`STATE_RECURRENCE_DOMINANT`.
+
+| Held-out comparison | EC: p / positive subjects | EO: p / positive subjects |
+|---|---|---|
+| Transition vs order null | 0.01 / 22 of 22 | 0.01 / 19 of 22 |
+| Transition vs phase null | 0.36 / 14 of 22 | 0.37 / 9 of 22 |
+| State vs order null | 0.01 / 18 of 22 | 0.01 / 19 of 22 |
+| State vs phase null | 0.01 / 22 of 22 | 0.01 / 22 of 22 |
+
+![LEMON R1 observed medians compared with order and phase aggregate null distributions](docs/assets/r1-lemon-null-comparisons.svg)
+
+The strongest transformation-without-state-return dissociation was not the
+population finding. “State dominant” refers to the null tiers, rather than
+comparing the numerical sizes of the two metrics. Passing the phase surrogate
+does not identify a nonlinear circuit or an inhibitory resonance valve: marginal
+distributions, nonstationarity, and preprocessing remain possible contributors.
+EO uses the same people as EC. See the
+[full analysis](docs/analysis/2026-10-05-r1-lemon.md),
+[compact summary](results/receipts/r1-lemon-full-summary.json), and
+[receipt provenance](results/receipts/PROVENANCE.md).
+
+The public source metadata for excluded `sub-032309` reproduce the reported
+313-annotation warning: the EEG file length spans about 389 seconds, while its
+markers extend to about 1,045 seconds. A metadata-only check retains just three
+blocks per condition, consistent with its exclusion. The 22 usable held-out
+subjects still satisfy the canonical minimum. This check did not reprocess the
+user's local EEG recordings.
+
+To reproduce the run with another raw-data directory:
 
 **R1 needs a separate dataset download.** The `physionet.org/files` folder used
 for EEGMMIDB Gates 1A–1C contains EDF recordings and cannot serve as R1 input.

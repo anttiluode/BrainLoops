@@ -15,12 +15,18 @@ implementation. The scientific ledger is [`results/RESULTS.md`](../results/RESUL
 | Gate 1C | 109-subject PASS; original full receipt and compact summary present | Independent confirmation, not reinterpretation as a reset |
 | Gate 1C history diagnostic | Negative median; not supported | Exploratory only |
 | R1 synthetic | Four frozen controls PASS at seed 1, 99 nulls; receipt present | Calibration complete |
-| R1 real | Adapter, runner, nulls, CLI, and tests implemented | Run raw LEMON and retain its real receipt |
+| R1 real | Canonical EC and EO PASS_LINEAR; 22 usable held-out subjects; full receipt and audited summary present | Independent cohort with predeclared distribution/nonstationarity controls |
 | Resonance-valve hypothesis | Interpretation and proposed experiment documented | No inhibitory-controller or seizure experiment implemented |
 
 The original Gate-1B-to-LEMON advancement condition remains unsatisfied. R1 is a
 separately approved follow-up; the repository contains its implementation without
 claiming that the original ladder advanced.
+
+The latest real result is in the
+[R1 LEMON analysis](analysis/2026-10-05-r1-lemon.md). Historical recovery and
+adapter checkpoints below describe earlier stages; their then-pending runs have
+now been completed. The canonical publication checkpoint near the end records
+the current evidence and remaining limits.
 
 ## Audited source revisions
 
@@ -154,12 +160,45 @@ Retain the actual receipt and investigate any remaining condition skip reasons.
 
 1. Fetch current remote main and read this checkpoint. Inspect any open PR's
    current head before working; do not restart from an older staging branch.
-2. For the existing R1 experiment, obtain raw LEMON BrainVision data and run the
-   documented `brainloops r1-lemon ... --resume` command. EC is primary and EO
-   is replication; retain physical block boundaries and frozen criteria.
-3. Review the real receipt and update the results ledger with its actual verdict,
-   skipped/malformed recordings, and artifact diagnostics.
+2. The canonical R1 run is complete and retained. Read its
+   [analysis](analysis/2026-10-05-r1-lemon.md) and
+   [provenance](../results/receipts/PROVENANCE.md) before proposing another study.
+   Preserve EC/EO roles, physical block boundaries, the frozen verdict, and the
+   original receipt bytes.
+3. A new EEG study should predeclare broader multivariate distribution and
+   nonstationarity controls, verify their preserved constraints, and use an
+   independent cohort. It is a follow-up, not a repair of this saved result.
 
 The resonance-valve experiment is a later proposed test, not an unfinished task
 hidden inside R1. Its requirements are in the
 [interpretation note](interpretation/2026-10-05-resonance-valves.md#next-informative-tests).
+
+## Canonical R1 result publication
+
+Source base: `392f74796354c0ba9a7fb914170c32886c252793`, which adds the user's
+full real LEMON receipt on top of the refresh-marker repair. The attachment and
+committed receipt match byte for byte: 839,585 bytes, SHA-256
+`5035a94994e15e2c577021f01016af6c3ae00f02da669df2272974dda4c4f632`.
+
+- 26 subjects: three development and 23 held out. Excluding `sub-032309` in both
+  conditions leaves the same 22 usable people in EC and EO. Each successful
+  condition has eight physical blocks; 50/52 rows succeed; 99 nulls are recorded.
+- Both conditions have transition `LINEAR_LAG_RECURRENCE`, state
+  `BEYOND_LINEAR_RECURRENCE`, and `STATE_RECURRENCE_DOMINANT`. Canonical EC and
+  replication EO both report `PASS_LINEAR`. The phase-null label remains an
+  operational result with distributional/nonstationarity limits.
+- A fresh saved-output audit passes 1,807 checks with zero mismatches, including
+  independent arithmetic and frozen-runner recomputation of the full population
+  dictionaries. The 26 EEG recordings were not reprocessed.
+- The public S3 metadata for `sub-032309` match official older-ID `sub-010015`
+  metadata. The source EEG byte length implies 388.9876 seconds; markers extend
+  to 1,045.2412 seconds. A metadata-only MNE read reproduces the 313-annotation
+  warning and leaves three blocks per condition. This is consistent with the
+  receipt exclusion; local-file identity remains unchecked.
+- The main README, results ledger, analysis, figure, compact summary, provenance,
+  and checksum manifest now agree. Documentation/receipt verification checks
+  local links, JSON, exact checksums, table values, and unchanged earlier receipts.
+  No scientific metric, threshold, split, or loader behavior is changed.
+
+Next: an independently designed EEG follow-up or the separately proposed
+feedback/gain experiment. No unfinished canonical R1 run remains.

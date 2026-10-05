@@ -1,0 +1,295 @@
+{
+  "artifact_diagnostics_ec": {
+    "n": 22,
+    "pearson_r": -0.12066481886743885,
+    "spearman_r": -0.06154714850367025
+  },
+  "audit": {
+    "checks_passed": 1807,
+    "mismatches": 0,
+    "scope": "Saved-output audit: bytes, configuration, splits, row completeness, subject statistics, aggregate null arrays, classifications, and artifact diagnostics. The 26 EEG recordings were not reprocessed."
+  },
+  "audited_against_source_revision": "392f74796354c0ba9a7fb914170c32886c252793",
+  "config": {
+    "code_version": "0.1.0",
+    "epoch_s": 0.5,
+    "half_window": 1,
+    "lag_max_s": 20.0,
+    "lag_min_s": 2.0,
+    "lag_step_s": 0.5,
+    "n_null": 99,
+    "pca_dim": 8,
+    "primary_condition": "EC",
+    "replication_condition": "EO",
+    "seed": 0,
+    "subject_ids": [
+      "sub-032301",
+      "sub-032302",
+      "sub-032303",
+      "sub-032304",
+      "sub-032305",
+      "sub-032306",
+      "sub-032307",
+      "sub-032308",
+      "sub-032309",
+      "sub-032310",
+      "sub-032311",
+      "sub-032312",
+      "sub-032313",
+      "sub-032314",
+      "sub-032315",
+      "sub-032316",
+      "sub-032317",
+      "sub-032318",
+      "sub-032327",
+      "sub-032328",
+      "sub-032330",
+      "sub-032331",
+      "sub-032339",
+      "sub-032342",
+      "sub-032343",
+      "sub-032344"
+    ]
+  },
+  "config_fingerprint": "a2d2da3d93b76cc8e87074abdb986fbe8bfe4e501f3597e4d0c4e039f349d4e6",
+  "counts": {
+    "development_subjects": 3,
+    "discovered_subjects": 26,
+    "heldout_subjects": 23,
+    "skipped_subject_conditions": 2,
+    "subject_condition_rows": 52,
+    "successful_subject_conditions": 50,
+    "usable_heldout_ec_subjects": 22,
+    "usable_heldout_eo_subjects": 22,
+    "usable_subjects": 25
+  },
+  "descriptive_heldout": {
+    "EC": {
+      "fraction_feature_values_clipped": {
+        "max": 0.07419354838709677,
+        "median": 0.04549348416363164,
+        "min": 0.03476376669925057
+      },
+      "state_peak_lag_counts": {
+        "11.0": 1,
+        "13.5": 2,
+        "17.0": 1,
+        "18.5": 1,
+        "2.0": 4,
+        "2.5": 2,
+        "3.0": 3,
+        "3.5": 3,
+        "4.0": 3,
+        "4.5": 1,
+        "7.0": 1
+      },
+      "subject_interpretations": {
+        "NO_ROBUST_RECURRENCE": 4,
+        "STATE_RECURRENCE_DOMINANT": 14,
+        "TRANSFORMATION_ONLY_AT_ORDER_TIER": 4
+      },
+      "subject_state_classes": {
+        "BEYOND_LINEAR_RECURRENCE": 14,
+        "NO_ROBUST_RECURRENCE": 8
+      },
+      "subject_transition_classes": {
+        "LINEAR_LAG_RECURRENCE": 7,
+        "NO_ROBUST_RECURRENCE": 15
+      },
+      "transition_peak_lag_counts": {
+        "11.0": 1,
+        "12.5": 1,
+        "13.5": 1,
+        "14.0": 1,
+        "15.5": 2,
+        "16.0": 1,
+        "16.5": 2,
+        "17.0": 1,
+        "17.5": 4,
+        "18.5": 1,
+        "19.5": 2,
+        "3.0": 1,
+        "6.5": 1,
+        "7.5": 2,
+        "8.5": 1
+      },
+      "usable_physical_blocks": 176
+    },
+    "EO": {
+      "fraction_feature_values_clipped": {
+        "max": 0.08286350866996028,
+        "median": 0.055873318065165836,
+        "min": 0.0342339116565216
+      },
+      "state_peak_lag_counts": {
+        "12.0": 1,
+        "14.0": 1,
+        "17.5": 1,
+        "19.5": 1,
+        "2.0": 3,
+        "2.5": 1,
+        "3.0": 3,
+        "3.5": 3,
+        "4.5": 3,
+        "5.0": 1,
+        "5.5": 1,
+        "6.0": 1,
+        "7.5": 1,
+        "9.5": 1
+      },
+      "subject_interpretations": {
+        "JOINT_TRANSITION_AND_STATE_RECURRENCE": 1,
+        "NO_ROBUST_RECURRENCE": 8,
+        "STATE_RECURRENCE_DOMINANT": 8,
+        "TRANSFORMATION_ONLY_AT_ORDER_TIER": 5
+      },
+      "subject_state_classes": {
+        "BEYOND_LINEAR_RECURRENCE": 9,
+        "NO_ROBUST_RECURRENCE": 13
+      },
+      "subject_transition_classes": {
+        "BEYOND_LINEAR_RECURRENCE": 1,
+        "LINEAR_LAG_RECURRENCE": 6,
+        "NO_ROBUST_RECURRENCE": 15
+      },
+      "transition_peak_lag_counts": {
+        "10.0": 1,
+        "13.0": 2,
+        "14.5": 2,
+        "15.0": 1,
+        "16.0": 1,
+        "16.5": 1,
+        "18.0": 1,
+        "19.0": 2,
+        "19.5": 1,
+        "3.5": 2,
+        "4.0": 1,
+        "4.5": 1,
+        "6.0": 1,
+        "6.5": 1,
+        "7.5": 1,
+        "8.0": 1,
+        "9.0": 1,
+        "9.5": 1
+      },
+      "usable_physical_blocks": 176
+    }
+  },
+  "development_subjects": [
+    "sub-032302",
+    "sub-032308",
+    "sub-032343"
+  ],
+  "primary_ec": {
+    "aggregates": {
+      "state_order": {
+        "n_subjects": 22,
+        "null_median": -12.380571965943687,
+        "p_value": 0.01,
+        "pass": true,
+        "positive_count": 18,
+        "positive_fraction": 0.8181818181818182,
+        "real_median": -11.920239431591956
+      },
+      "state_phase": {
+        "n_subjects": 22,
+        "null_median": -12.814981358610748,
+        "p_value": 0.01,
+        "pass": true,
+        "positive_count": 22,
+        "positive_fraction": 1.0,
+        "real_median": -11.920239431591956
+      },
+      "transition_order": {
+        "n_subjects": 22,
+        "null_median": 0.036764139996722525,
+        "p_value": 0.01,
+        "pass": true,
+        "positive_count": 22,
+        "positive_fraction": 1.0,
+        "real_median": 0.05034721497915216
+      },
+      "transition_phase": {
+        "n_subjects": 22,
+        "null_median": 0.048790631075134136,
+        "p_value": 0.36,
+        "pass": false,
+        "positive_count": 14,
+        "positive_fraction": 0.6363636363636364,
+        "real_median": 0.05034721497915216
+      }
+    },
+    "interpretation": "STATE_RECURRENCE_DOMINANT",
+    "n_subjects": 22,
+    "state_class": "BEYOND_LINEAR_RECURRENCE",
+    "status": "PASS_LINEAR",
+    "transition_class": "LINEAR_LAG_RECURRENCE"
+  },
+  "replication_eo": {
+    "aggregates": {
+      "state_order": {
+        "n_subjects": 22,
+        "null_median": -12.711920028097737,
+        "p_value": 0.01,
+        "pass": true,
+        "positive_count": 19,
+        "positive_fraction": 0.8636363636363636,
+        "real_median": -12.036341138770165
+      },
+      "state_phase": {
+        "n_subjects": 22,
+        "null_median": -13.15453896461375,
+        "p_value": 0.01,
+        "pass": true,
+        "positive_count": 22,
+        "positive_fraction": 1.0,
+        "real_median": -12.036341138770165
+      },
+      "transition_order": {
+        "n_subjects": 22,
+        "null_median": 0.03671910223358918,
+        "p_value": 0.01,
+        "pass": true,
+        "positive_count": 19,
+        "positive_fraction": 0.8636363636363636,
+        "real_median": 0.04985519192217737
+      },
+      "transition_phase": {
+        "n_subjects": 22,
+        "null_median": 0.0487443668666175,
+        "p_value": 0.37,
+        "pass": false,
+        "positive_count": 9,
+        "positive_fraction": 0.4090909090909091,
+        "real_median": 0.04985519192217737
+      }
+    },
+    "interpretation": "STATE_RECURRENCE_DOMINANT",
+    "n_subjects": 22,
+    "state_class": "BEYOND_LINEAR_RECURRENCE",
+    "status": "PASS_LINEAR",
+    "transition_class": "LINEAR_LAG_RECURRENCE"
+  },
+  "skipped_rows": [
+    {
+      "condition": "EC",
+      "reason": "subject has no usable condition: EC: condition has fewer than four usable physical blocks; EO: condition has fewer than four usable physical blocks",
+      "split": "heldout",
+      "status": "SKIP",
+      "subject_id": "sub-032309"
+    },
+    {
+      "condition": "EO",
+      "reason": "subject has no usable condition: EC: condition has fewer than four usable physical blocks; EO: condition has fewer than four usable physical blocks",
+      "split": "heldout",
+      "status": "SKIP",
+      "subject_id": "sub-032309"
+    }
+  ],
+  "source_receipt": {
+    "bytes": 839585,
+    "filename": "r1-lemon-full.json",
+    "sha256": "5035a94994e15e2c577021f01016af6c3ae00f02da669df2272974dda4c4f632"
+  },
+  "status": "PASS_LINEAR"
+}
