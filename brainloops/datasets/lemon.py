@@ -248,18 +248,33 @@ def parse_rest_blocks(annotations_or_raw, duration_s: float | None = None) -> tu
     selected_onsets = np.asarray([x[0] for x in selected], dtype=float)
     if np.any(np.diff(selected_onsets) <= 0):
         raise MalformedAnnotationsError("rest marker onsets must be strictly increasing")
-    conditions = [x[1] for x in selected]
-    if any(a == b for a, b in zip(conditions, conditions[1:])):
-        raise MalformedAnnotationsError("EO/EC rest markers must alternate")
+    # Raw LEMON repeats the active condition every two seconds. Only a
+    # condition change starts a physical block. Collapse this known refresh
+    # cadence, allowing clock/resampling rounding, without bridging arbitrary
+    # same-condition gaps that could hide a missing block boundary.
+    boundaries = [selected[0]]
+    for (previous_onset, previous_condition), (onset, condition) in zip(selected, selected[1:]):
+        if condition == previous_condition:
+            gap = onset - previous_onset
+            if not np.isclose(gap, 2.0, atol=0.02, rtol=0):
+                raise MalformedAnnotationsError(
+                    "EO/EC physical blocks must alternate; "
+                    f"repeated {condition} markers at {previous_onset:.3f}s and {onset:.3f}s "
+                    f"have a {gap:.3f}s gap instead of the raw LEMON 2s refresh"
+                )
+        else:
+            boundaries.append((onset, condition))
+    if len(boundaries) < 2:
+        raise MissingAnnotationsError("recording has too few EO/EC physical blocks")
 
     return tuple(
         LEMONBlock(
             condition=condition,
             start_s=start_s,
-            stop_s=(selected[i + 1][0] if i + 1 < len(selected) else float(duration_s)),
+            stop_s=(boundaries[i + 1][0] if i + 1 < len(boundaries) else float(duration_s)),
             index=i,
         )
-        for i, (start_s, condition) in enumerate(selected)
+        for i, (start_s, condition) in enumerate(boundaries)
     )
 
 

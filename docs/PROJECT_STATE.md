@@ -107,6 +107,49 @@ Next: install current main and run the user's eight actual raw subjects with
 `--exploratory` and a fresh output filename. Retain that actual receipt, including
 any remaining skip reasons. The canonical 20-subject real-data result is pending.
 
+## Raw LEMON refresh-marker repair
+
+Base revision: `183a11bd954cf44252d6647700760f55a81ff6d3`. The user subsequently
+reported 26 discovered subjects, zero usable held-out EC subjects, and 52 skipped
+conditions with the reason `EO/EC rest markers must alternate`. One MNE warning
+reported 313 annotations outside the data range.
+
+The alternation failure was reproduced on a complete official raw recording.
+The GWDG `sub-010002`, `sub-010003`, and `sub-010004` marker files each contain
+480 EO/EC pulses: 30 two-second condition refreshes per physical block, across
+16 alternating blocks. Observed adjacent same-condition gaps were
+1.9996–2.0004 seconds. The former parser incorrectly required every pulse to
+alternate. The adapter now coalesces the known two-second refresh cadence,
+allowing 20 ms for clock/resampling rounding, while retaining every condition
+change as a physical boundary. Other duplicate gaps and non-increasing or
+out-of-range onsets still fail explicitly. The last-block-to-recording-end
+convention, recurrence/null calculations, splits, and numerical criteria remain
+unchanged. This corrects a dataset-format assumption, not a result-selection rule.
+
+- Four new refresh-pattern regression cases failed before the fix and now pass.
+- Focused adapter/runner tests: 39 passed. Full suite: 113 passed, 1 skipped
+  (external EEGMMIDB data unavailable).
+- Synthetic R1: seed 1, 99 nulls, PASS; JSON matches the canonical receipt exactly.
+- Actual raw smoke checks: the public S3 archives for `sub-032301` and
+  `sub-032344` each yield eight usable EC and eight usable EO feature blocks.
+  The `sub-032301` CLI run processed both conditions with 99 nulls and zero skips.
+  Its one-subject exploratory status was `EXPLORATORY_FAIL`; the canonical
+  status was `INSUFFICIENT_DATA`. This compatibility check is not a canonical
+  population result, and its diagnostic receipt is not committed as one.
+- The first S3 archive's header/marker bytes match the older-ID GWDG metadata;
+  real MNE loading also exercises the renamed-companion repair.
+- Independent review approved the parser; `git diff --check` passed.
+
+Neither downloaded smoke-check recording emitted the user's clipped-annotation
+warning. Its cause in the user's local set remains unconfirmed and is separate
+from refresh-marker parsing; the repair does not restore absent data or assert
+that all 26 recordings are usable. Raw downloads remain outside git.
+
+Next: update the installed command and run the user's larger actual set without
+`--exploratory`, using a fresh `r1-lemon-full.json` receipt. At least 20 usable
+held-out EC subjects are required; 26 downloads do not guarantee that count.
+Retain the actual receipt and investigate any remaining condition skip reasons.
+
 ## Resume here
 
 1. Fetch current remote main and read this checkpoint. Inspect any open PR's
