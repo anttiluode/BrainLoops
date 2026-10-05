@@ -182,3 +182,22 @@ def test_runner_persists_split_before_first_recording_can_be_interrupted(monkeyp
     assert checkpoint["development_subjects"] == []
     assert checkpoint["subject_conditions"] == []
     assert checkpoint["config_fingerprint"]
+
+
+def test_cli_explains_insufficient_population_with_actual_counts(monkeypatch, tmp_path, capsys):
+    import brainloops.cli as cli
+
+    subject = _Subject("sub-010002", tmp_path / "a.vhdr")
+    monkeypatch.setattr(r1, "discover_subjects", lambda *a, **k: [subject])
+    monkeypatch.setattr(r1, "load_subject_conditions", lambda s, **k: {"EC": _features(s.subject_id, "EC")})
+    code = cli.main([
+        "r1-lemon", "--data", str(tmp_path), "--n-null", "19",
+        "--output", str(tmp_path / "receipt.json"),
+    ])
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "INSUFFICIENT_DATA" in text
+    assert "Discovered LEMON subjects: 1" in text
+    assert "Usable held-out EC subjects: 1 (required: 20)" in text
+    assert "Null replicates: 19 (required: 19)" in text
+    assert "Skipped subject-conditions: 1" in text

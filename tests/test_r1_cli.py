@@ -26,3 +26,19 @@ def test_source_tree_r1_scripts_have_help():
     for script in ("experiments/r1_synthetic.py", "experiments/r1_lemon.py"):
         result = subprocess.run([sys.executable, script, "--help"], cwd=root, text=True, capture_output=True)
         assert result.returncode == 0, result.stderr
+
+
+def test_r1_lemon_rejects_edf_only_input_without_writing_receipt(tmp_path, capsys):
+    data = tmp_path / "eegmmidb"
+    (data / "S001").mkdir(parents=True)
+    (data / "S001" / "S001R03.edf").touch()
+    output = tmp_path / "receipt.json"
+    code = cli.main([
+        "r1-lemon", "--data", str(data), "--n-null", "99",
+        "--output", str(output), "--resume",
+    ])
+    message = capsys.readouterr().err
+    assert code == 2
+    assert "LEMON" in message and ".vhdr" in message and "sub-" in message
+    assert "EEGMMIDB" in message
+    assert not output.exists()

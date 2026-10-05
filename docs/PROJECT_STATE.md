@@ -52,6 +52,26 @@ actual file/marker compatibility. R1 receipts retain subject spectra and usable
 block counts, but do not yet retain per-block spectra and usable-pair counts from
 the original spec. That is an auditability limitation of the current output.
 
+## R1 input-diagnostics follow-up
+
+The follow-up starts from consolidated main
+`e410d8dd462885fff7590665b2ac524d787d8090`. An EEGMMIDB-only directory previously
+discovered zero LEMON subjects, wrote an empty receipt, and printed only
+`INSUFFICIENT_DATA`. The runner now rejects that input before touching the output.
+Valid but insufficient LEMON runs print the discovered, usable held-out EC,
+null, and skipped subject-condition counts. The README includes the separate raw
+LEMON download, extracted layout, and fresh-receipt requirement when switching
+datasets. Scientific criteria and existing receipt contents are unchanged.
+
+- Full suite: 101 passed, 1 skipped (external EEGMMIDB dataset unavailable).
+- Both new diagnostic regressions failed on the previous main and now pass.
+- R1 synthetic: seed 1, 99 nulls, PASS; output matches the canonical JSON exactly.
+- Both CLI entry points reject EDF-only input with exit code 2 and preserve an
+  existing receipt, including with `--resume`.
+- Independent code review approved the focused change; `git diff --check` passed.
+
+The next unfinished step remains a real raw LEMON run, not another EEGMMIDB run.
+
 ## Resume here
 
 1. Fetch current remote main and read this checkpoint. Inspect any open PR's

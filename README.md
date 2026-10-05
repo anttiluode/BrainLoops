@@ -176,21 +176,52 @@ brainloops r1-synthetic --n-null 99 --seed 1 --output results/receipts/r1-synthe
 
 A real LEMON receipt is **pending**. No real-data verdict is inferred from the synthetic calibration.
 
+**R1 needs a separate dataset download.** The `physionet.org/files` folder used
+for EEGMMIDB Gates 1A–1C contains EDF recordings and cannot serve as R1 input.
+Download subjects from the **Raw Data** section of the
+[official MPI-LEMON EEG download page](https://fcon_1000.projects.nitrc.org/indi/retro/MPI_LEMON/downloads/download_EEG.html),
+then extract the archives. Keep the `sub-...` subject directories and each
+recording's `.vhdr`, `.vmrk`, and `.eeg` companions together. Pass their common
+parent directory to `--data`. This command does not download data automatically.
+
 ```bash
 brainloops r1-lemon \
   --data /path/to/lemon-raw \
   --n-null 99 \
-  --output results/receipts/r1-lemon.json \
+  --output results/receipts/r1-lemon-raw.json \
   --resume
 ```
 
 Windows:
 
 ```bat
-brainloops r1-lemon --data "E:\path\to\lemon-raw" --n-null 99 --output results\receipts\r1-lemon.json --resume
+brainloops r1-lemon --data "E:\path\to\lemon-raw" --n-null 99 --output results\receipts\r1-lemon-raw.json --resume
 ```
 
-The canonical R1 receipt requires at least 20 usable held-out EC subjects and at least 19 null replicates; otherwise it reports `INSUFFICIENT_DATA`.
+The canonical R1 receipt requires at least **20 usable held-out EC subjects**
+and at least **19 null replicates**. Some subjects belong to the deterministic
+development split or lack sufficient usable blocks, so 20 downloaded subjects
+may not be enough. An insufficient run prints the discovered subject count,
+usable held-out EC count, null count, and skipped subject-condition count;
+individual skip reasons are retained in the JSON receipt. A folder with no
+eligible raw LEMON subjects produces an input error before writing a receipt.
+
+Use `--resume` only for the same subject set and run configuration. When changing
+from the EEGMMIDB folder to raw LEMON, use a fresh output filename as above;
+an earlier empty receipt cannot be resumed with a different subject list.
+
+If `r1-lemon` is an "invalid choice", the executable points to an older install.
+From an updated checkout, install with the same Python you will use to run it:
+
+```bat
+python3.13 -m pip install --upgrade -e .
+python3.13 -m brainloops.cli r1-lemon --help
+```
+
+Replace `python3.13` with your installed interpreter if needed. Running
+`python3.13 -m brainloops.cli r1-lemon ...` uses that interpreter's package and
+avoids a stale `brainloops` executable elsewhere on `PATH`. Updating the code
+does not supply the separate raw LEMON dataset.
 
 R1 is an explicitly approved independent follow-up motivated by Gate 1C. Its implementation is consolidated in this repository. It does **not** rewrite the frozen Gate 1B result or retroactively satisfy the original Gate-1B-to-LEMON advancement rule.
 
