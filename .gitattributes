@@ -1,0 +1,4 @@
+# Receipts and archival originals retain their exact bytes across platforms.
+results/receipts/*.json -text whitespace=cr-at-eol
+docs/archive/gate1b-summary.json -text whitespace=cr-at-eol
+docs/archive/gate1b-receipt-summary.yml.txt -text

@@ -1,0 +1,158 @@
+name: Gate 1B receipt summary
+
+on:
+  push:
+    branches:
+      - analysis/gate1b-receipt-summary
+
+permissions:
+  contents: write
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Summarize receipt
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, math
+          from collections import Counter, defaultdict
+          from pathlib import Path
+          import statistics
+
+          p = Path('results/receipts/gate1b-eegmmidb.json')
+          d = json.loads(p.read_text(encoding='utf-8'))
+
+          def quantiles(xs):
+              xs = sorted(float(x) for x in xs)
+              if not xs:
+                  return None
+              def q(frac):
+                  if len(xs) == 1: return xs[0]
+                  pos = frac * (len(xs)-1)
+                  lo = int(math.floor(pos)); hi = int(math.ceil(pos))
+                  if lo == hi: return xs[lo]
+                  a = pos-lo
+                  return xs[lo]*(1-a)+xs[hi]*a
+              return {'min': xs[0], 'q25': q(.25), 'median': q(.5), 'q75': q(.75), 'max': xs[-1], 'mean': sum(xs)/len(xs)}
+
+          def rankdata(xs):
+              order = sorted(range(len(xs)), key=lambda i: xs[i])
+              ranks = [0.0]*len(xs)
+              i=0
+              while i < len(order):
+                  j=i+1
+                  while j < len(order) and xs[order[j]] == xs[order[i]]: j+=1
+                  r=(i+j-1)/2+1
+                  for z in range(i,j): ranks[order[z]]=r
+                  i=j
+              return ranks
+
+          def corr(a,b):
+              if len(a)<3: return None
+              ma=sum(a)/len(a); mb=sum(b)/len(b)
+              da=[x-ma for x in a]; db=[x-mb for x in b]
+              va=sum(x*x for x in da); vb=sum(x*x for x in db)
+              if va==0 or vb==0: return None
+              return sum(x*y for x,y in zip(da,db))/math.sqrt(va*vb)
+
+          held = set(int(x) for x in d.get('heldout_subjects', []))
+          dev = set(int(x) for x in d.get('development_subjects', []))
+          subs = list(d.get('subjects', []))
+          helds = [s for s in subs if int(s['subject']) in held]
+          devs = [s for s in subs if int(s['subject']) in dev]
+          runs = list(d.get('runs', []))
+          oks = [r for r in runs if r.get('status') == 'OK']
+          skips = [r for r in runs if r.get('status') != 'OK']
+
+          held_scores = [float(s['score']) for s in helds]
+          held_null_medians = [statistics.median(float(x) for x in s['null_scores']) for s in helds]
+          held_delta = [a-b for a,b in zip(held_scores, held_null_medians)]
+          held_pos = [s for s in helds if bool(s.get('positive_direction'))]
+          held_sig = [s for s in helds if float(s.get('p_value',1)) <= .05]
+
+          # Reconstruct aggregate statistic exactly as implementation does.
+          nnull = len(helds[0]['null_scores']) if helds else 0
+          agg_real = statistics.median(held_scores) if held_scores else None
+          agg_null = []
+          for j in range(nnull):
+              agg_null.append(statistics.median(float(s['null_scores'][j]) for s in helds))
+
+          by_run = defaultdict(list)
+          for r in oks:
+              by_run[int(r['run'])].append(r)
+          run_summary = {}
+          for run, items in sorted(by_run.items()):
+              scores=[float(x['score']) for x in items]
+              diffs=[float(x['score'])-statistics.median(float(v) for v in x['null_scores']) for x in items]
+              run_summary[str(run)] = {
+                  'n': len(items),
+                  'score': quantiles(scores),
+                  'delta_vs_null_median': quantiles(diffs),
+                  'positive_fraction': sum(bool(x.get('positive_direction')) for x in items)/len(items),
+                  'p_le_0_05': sum(float(x.get('p_value',1)) <= .05 for x in items),
+              }
+
+          art_x=[]; score_y=[]; delta_y=[]
+          for r in oks:
+              a=r.get('artifact_stats') or {}
+              f=a.get('fraction_values_clipped')
+              if f is not None:
+                  art_x.append(float(f)); score_y.append(float(r['score']))
+                  delta_y.append(float(r['score'])-statistics.median(float(v) for v in r['null_scores']))
+
+          sorted_delta = sorted(
+              ({'subject':int(s['subject']), 'score':float(s['score']),
+                'null_median':statistics.median(float(v) for v in s['null_scores']),
+                'delta':float(s['score'])-statistics.median(float(v) for v in s['null_scores']),
+                'p':float(s['p_value']), 'n_runs':int(s['n_runs'])} for s in helds),
+              key=lambda x:x['delta']
+          )
+
+          out = {
+              'receipt_status': d.get('status'),
+              'gate': d.get('gate'),
+              'null': d.get('null'),
+              'config': d.get('config'),
+              'aggregate_p_reported': d.get('aggregate_p'),
+              'positive_fraction_reported': d.get('positive_fraction'),
+              'n_development_ids': len(dev),
+              'n_heldout_ids': len(held),
+              'n_subject_results': len(subs),
+              'n_heldout_results': len(helds),
+              'n_dev_results': len(devs),
+              'n_runs_total': len(runs),
+              'n_runs_ok': len(oks),
+              'n_runs_skipped': len(skips),
+              'skip_reasons': dict(Counter(str(r.get('reason')) for r in skips)),
+              'heldout_positive_count': len(held_pos),
+              'heldout_individual_p_le_0_05_count': len(held_sig),
+              'heldout_score_summary': quantiles(held_scores),
+              'heldout_null_median_summary': quantiles(held_null_medians),
+              'heldout_delta_vs_null_median_summary': quantiles(held_delta),
+              'aggregate_real_median_reconstructed': agg_real,
+              'aggregate_null_summary_reconstructed': quantiles(agg_null),
+              'aggregate_null_ge_real_count': sum(x >= agg_real for x in agg_null) if agg_real is not None else None,
+              'all_subject_positive_fraction': (sum(bool(s.get('positive_direction')) for s in subs)/len(subs)) if subs else None,
+              'development_positive_fraction': (sum(bool(s.get('positive_direction')) for s in devs)/len(devs)) if devs else None,
+              'run_summary': run_summary,
+              'artifact_fraction_values_clipped_summary': quantiles(art_x),
+              'artifact_pearson_with_run_score': corr(art_x, score_y),
+              'artifact_pearson_with_run_delta': corr(art_x, delta_y),
+              'artifact_spearman_with_run_score': corr(rankdata(art_x), rankdata(score_y)) if len(art_x)>=3 else None,
+              'artifact_spearman_with_run_delta': corr(rankdata(art_x), rankdata(delta_y)) if len(art_x)>=3 else None,
+              'most_negative_heldout': sorted_delta[:10],
+              'most_positive_heldout': sorted_delta[-10:][::-1],
+          }
+          Path('gate1b-summary.json').write_text(json.dumps(out, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          PY
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add gate1b-summary.json
+          git commit -m "analysis: add reduced Gate 1B summary"
+          git push

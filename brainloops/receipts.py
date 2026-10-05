@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
+import tempfile
 from typing import Any, Mapping
 
 import numpy as np
@@ -37,7 +39,12 @@ def config_fingerprint(payload: Mapping[str, Any]) -> str:
 def write_receipt(path: Path, payload: Mapping[str, Any]) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(_jsonable(payload), indent=2, sort_keys=True, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    text = json.dumps(_jsonable(payload), indent=2, sort_keys=True, allow_nan=False) + "\n"
+    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    os.close(fd)
+    staging = Path(name)
+    try:
+        staging.write_text(text, encoding="utf-8")
+        staging.replace(path)
+    finally:
+        staging.unlink(missing_ok=True)
