@@ -72,6 +72,41 @@ datasets. Scientific criteria and existing receipt contents are unchanged.
 
 The next unfinished step remains a real raw LEMON run, not another EEGMMIDB run.
 
+## Eight-subject exploratory path and loader compatibility
+
+Base revision: `7cc02d40d871c9c31b1bb2607b1a4462eda72734`. The user reported
+eight discovered raw LEMON subjects, zero usable held-out EC subjects, and 16
+skipped conditions. Their receipt and exact skip reasons were not provided.
+
+The raw-file adapter now handles a documented LEMON renaming issue: missing
+older-ID references can resolve to the header's existing same-stem companions.
+A real MNE reader fixture reproduced the failure before the fix. Temporary
+corrected headers and markers respect source codepages and use UTF-8 consistently,
+including non-ASCII filesystem paths; downloaded source bytes remain untouched.
+This repairs a reproduced likely cause, not a confirmed diagnosis of the user's
+particular skipped rows.
+
+`--exploratory` reports the same recurrence/null statistics with one or more
+usable held-out EC subjects while retaining the canonical 20-subject verdict
+separately. Results are prefixed `EXPLORATORY_`; splits, physical blocks, lag/null
+definitions, EC/EO roles, and significance/direction rules are unchanged.
+`--resume --retry-skipped` preserves completed rows and retries failed conditions.
+The CLI now prints up to five distinct skip reasons.
+
+- Full suite: 108 passed, 1 skipped (external EEGMMIDB data unavailable).
+- New feature/loader regressions failed before implementation; ANSI/non-ASCII
+  path regressions exposed and verified the repair of a code-review finding.
+- Synthetic R1: seed 1, 99 nulls, PASS; JSON matches the canonical receipt exactly.
+- End-to-end generated BrainVision check: eight subjects, 99 nulls, all 16
+  conditions processed, seven usable held-out EC subjects, zero skips. This
+  generated-data check is not a real LEMON result.
+- Independent code review approved after the encoding repair; `git diff --check`
+  passed.
+
+Next: install current main and run the user's eight actual raw subjects with
+`--exploratory` and a fresh output filename. Retain that actual receipt, including
+any remaining skip reasons. The canonical 20-subject real-data result is pending.
+
 ## Resume here
 
 1. Fetch current remote main and read this checkpoint. Inspect any open PR's

@@ -201,3 +201,78 @@ def test_cli_explains_insufficient_population_with_actual_counts(monkeypatch, tm
     assert "Usable held-out EC subjects: 1 (required: 20)" in text
     assert "Null replicates: 19 (required: 19)" in text
     assert "Skipped subject-conditions: 1" in text
+
+
+def test_exploratory_eight_subject_population_retains_canonical_insufficiency():
+    rows = [_row(f"sub-{i:02d}", 5.0, [0.0] * 19) for i in range(8)]
+    assert r1.primary_ec_status(rows, n_null=19)["status"] == "INSUFFICIENT_DATA"
+    result = r1.exploratory_ec_status(rows, n_null=19)
+    assert result["status"] == "PASS_BEYOND_LINEAR"
+    assert result["n_subjects"] == 8
+    assert result["aggregates"]["transition_order"]["p_value"] == 0.05
+    assert r1.exploratory_ec_status([], n_null=19)["status"] == "INSUFFICIENT_DATA"
+    assert r1.exploratory_ec_status(rows, n_null=18)["status"] == "INSUFFICIENT_DATA"
+
+
+def test_exploratory_cli_uses_eight_discovered_subjects_without_weakening_canonical_gate(monkeypatch, tmp_path, capsys):
+    import brainloops.cli as cli
+
+    identifiers = ["sub-032301", "sub-032302", "sub-032303", "sub-032304",
+                   "sub-032305", "sub-032306", "sub-032328", "sub-032344"]
+    subjects = [_Subject(subject, tmp_path / f"{subject}.vhdr") for subject in identifiers]
+    monkeypatch.setattr(r1, "discover_subjects", lambda *a, **k: subjects)
+    monkeypatch.setattr(r1, "load_subject_conditions", lambda s, **k: {
+        c: _features(s.subject_id, c) for c in ("EC", "EO")
+    })
+    output = tmp_path / "receipt.json"
+    code = cli.main([
+        "r1-lemon", "--data", str(tmp_path), "--n-null", "19",
+        "--output", str(output), "--exploratory",
+    ])
+    assert code == 0
+    payload = json.loads(output.read_text())
+    assert payload["status"].startswith("EXPLORATORY_")
+    assert payload["primary_ec"]["status"] == "INSUFFICIENT_DATA"
+    assert payload["exploratory_ec"]["n_subjects"] == 7
+    assert payload["config"]["exploratory"] is True
+    assert "Canonical R1 status: INSUFFICIENT_DATA" in capsys.readouterr().out
+
+
+def test_retry_skipped_recomputes_failed_conditions_and_preserves_completed_rows(monkeypatch, tmp_path):
+    subject = _Subject("sub-010002", tmp_path / "a.vhdr")
+    monkeypatch.setattr(r1, "discover_subjects", lambda *a, **k: [subject])
+    invalid = True
+
+    def load(s, **kwargs):
+        conditions = {c: _features(s.subject_id, c) for c in ("EC", "EO")}
+        if invalid:
+            rank_one = np.column_stack((np.linspace(-1, 1, 50), np.zeros((50, 3))))
+            conditions["EC"].blocks = tuple(
+                FeatureBatch(rank_one.copy(), 0.5, ("a", "b", "c", "d")) for _ in range(4)
+            )
+        return conditions
+
+    monkeypatch.setattr(r1, "load_subject_conditions", load)
+    output = tmp_path / "receipt.json"
+    original = r1.run_r1(tmp_path, n_null=1, output=output)
+    completed_eo = next(row for row in original["subject_conditions"] if row["condition"] == "EO")
+    assert original["subject_conditions"][0]["status"] == "SKIP"
+    invalid = False
+    resumed = r1.run_r1(tmp_path, n_null=1, output=output, resume=True, retry_skipped=True)
+    assert len(resumed["subject_conditions"]) == 2
+    assert all("transition" in row for row in resumed["subject_conditions"])
+    assert next(row for row in resumed["subject_conditions"] if row["condition"] == "EO") == completed_eo
+
+
+def test_insufficient_summary_prints_actual_skip_reasons(monkeypatch, tmp_path, capsys):
+    import brainloops.cli as cli
+
+    subject = _Subject("sub-010002", tmp_path / "a.vhdr")
+    monkeypatch.setattr(r1, "discover_subjects", lambda *a, **k: [subject])
+
+    def missing_companion(*args, **kwargs):
+        raise FileNotFoundError("missing sub-010002.vmrk")
+
+    monkeypatch.setattr(r1, "load_subject_conditions", missing_companion)
+    assert cli.main(["r1-lemon", "--data", str(tmp_path), "--output", str(tmp_path / "receipt.json")]) == 0
+    assert "missing sub-010002.vmrk" in capsys.readouterr().out

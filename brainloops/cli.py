@@ -61,6 +61,8 @@ def build_parser() -> argparse.ArgumentParser:
     r1.add_argument("--n-null", type=int, default=99)
     r1.add_argument("--output", type=Path, required=True)
     r1.add_argument("--resume", action="store_true")
+    r1.add_argument("--exploratory", action="store_true", help="report a labeled small-sample analysis while retaining the canonical 20-subject status")
+    r1.add_argument("--retry-skipped", action="store_true", help="retry skipped conditions when resuming, retaining completed results")
     r1.add_argument("--seed", type=int, default=0)
     return parser
 
@@ -106,9 +108,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0 if payload["status"] == "PASS" else 1
         if args.command == "r1-lemon":
             from experiments.r1_lemon import print_run_summary, run_r1
-            payload = run_r1(data=args.data, subject_ids=args.subjects, n_null=args.n_null, output=args.output, resume=args.resume, seed=args.seed)
+            payload = run_r1(data=args.data, subject_ids=args.subjects, n_null=args.n_null, output=args.output, resume=args.resume, seed=args.seed, exploratory=args.exploratory, retry_skipped=args.retry_skipped)
             print_run_summary(payload)
-            return 0 if payload["status"] in {"PASS_LINEAR", "PASS_BEYOND_LINEAR", "FAIL", "INSUFFICIENT_DATA"} else 1
+            return 0 if payload["status"].removeprefix("EXPLORATORY_") in {"PASS_LINEAR", "PASS_BEYOND_LINEAR", "FAIL", "INSUFFICIENT_DATA"} else 1
     except (FileNotFoundError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
