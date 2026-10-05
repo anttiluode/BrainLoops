@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 import experiments.r1_lemon as r1
 from brainloops.features import ArtifactStats, FeatureBatch
@@ -130,3 +132,53 @@ def test_runner_records_invalid_subject_as_skip_and_continues(monkeypatch, tmp_p
         ("sub-000002", "EC"), ("sub-000002", "EO")
     }
     assert "malformed rest markers" in skipped[0]["reason"]
+
+
+def test_runner_skips_degenerate_condition_and_resumes_without_repeating_it(monkeypatch, tmp_path):
+    subjects = [_Subject("sub-000001", tmp_path / "a.vhdr"), _Subject("sub-000002", tmp_path / "b.vhdr")]
+    loads = []
+    monkeypatch.setattr(r1, "discover_subjects", lambda *a, **k: subjects)
+
+    def load(subject, **kwargs):
+        loads.append(subject.subject_id)
+        conditions = {c: _features(subject.subject_id, c) for c in ("EC", "EO")}
+        if subject.subject_id == "sub-000001":
+            rank_one = np.column_stack((np.linspace(-1.0, 1.0, 50), np.zeros((50, 3))))
+            conditions["EC"].blocks = tuple(
+                FeatureBatch(rank_one.copy(), 0.5, ("a", "b", "c", "d")) for _ in range(4)
+            )
+        return conditions
+
+    monkeypatch.setattr(r1, "load_subject_conditions", load)
+    output = tmp_path / "receipt.json"
+    payload = r1.run_r1(tmp_path, n_null=1, output=output)
+    rows = payload["subject_conditions"]
+    skipped = [row for row in rows if row.get("status") == "SKIP"]
+    assert [(row["subject_id"], row["condition"]) for row in skipped] == [("sub-000001", "EC")]
+    assert "PCA component variance" in skipped[0]["reason"]
+    assert {(row["subject_id"], row["condition"]) for row in rows if "transition" in row} == {
+        ("sub-000001", "EO"), ("sub-000002", "EC"), ("sub-000002", "EO")
+    }
+    assert json.loads(output.read_text())["subject_conditions"] == rows
+    resumed = r1.run_r1(tmp_path, n_null=1, output=output, resume=True)
+    assert loads == ["sub-000001", "sub-000002"]
+    assert resumed["subject_conditions"] == rows
+
+
+def test_runner_persists_split_before_first_recording_can_be_interrupted(monkeypatch, tmp_path):
+    subject = _Subject("sub-010002", tmp_path / "a.vhdr")
+    monkeypatch.setattr(r1, "discover_subjects", lambda *a, **k: [subject])
+
+    def interrupted_load(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(r1, "load_subject_conditions", interrupted_load)
+    output = tmp_path / "receipt.json"
+    with pytest.raises(KeyboardInterrupt):
+        r1.run_r1(tmp_path, n_null=19, output=output)
+    checkpoint = json.loads(output.read_text())
+    assert checkpoint["status"] == "IN_PROGRESS"
+    assert checkpoint["heldout_subjects"] == ["sub-010002"]
+    assert checkpoint["development_subjects"] == []
+    assert checkpoint["subject_conditions"] == []
+    assert checkpoint["config_fingerprint"]

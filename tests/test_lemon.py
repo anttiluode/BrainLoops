@@ -182,3 +182,24 @@ def test_discovery_requires_literal_sub_path_component(tmp_path):
     d.mkdir()
     (d / "sub-010008_task-resting_eeg.vhdr").write_text("header", encoding="utf-8")
     assert discover_subjects(tmp_path) == []
+
+
+def test_load_subject_conditions_preserves_valid_ec_when_eo_is_constant(monkeypatch, tmp_path):
+    import brainloops.datasets.lemon as lemon
+
+    raw = _FakeRaw()
+    # Every EO block is constant; all EC blocks retain their original signal.
+    for block in lemon.parse_rest_blocks(raw):
+        if block.condition == "EO":
+            start = int(block.start_s * 100)
+            stop = int(block.stop_s * 100)
+            raw._data[:, start:stop] = 0.0
+    monkeypatch.setattr(lemon.mne.io, "read_raw_brainvision", lambda *a, **k: raw)
+    monkeypatch.setattr(lemon.mne, "pick_types", lambda *a, **k: np.array([0, 1]))
+    raw.pick = lambda picks: raw
+    raw.rename_channels = lambda mapping: None
+    raw.resample = lambda fs, verbose=False: raw
+    result = lemon.load_subject_conditions(lemon.LEMONSubject("sub-010007", tmp_path / "dummy.vhdr"))
+    assert set(result) == {"EC"}
+    assert len(result["EC"].blocks) == 4
+    assert all(np.any(np.ptp(batch.X, axis=0) > 0) for batch in result["EC"].blocks)

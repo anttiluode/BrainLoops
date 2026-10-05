@@ -3,3 +3,22 @@ __pycache__/
 .pytest_cache/
 *.pyc
 *.egg-info/
+.venv/
+venv/
+/build/
+/dist/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Raw EEG stays outside version control; derived JSON receipts are tracked.
+/data/
+/datasets/
+/eegmmidb/
+/lemon/
+*.edf
+*.bdf
+*.vhdr
+*.vmrk
+*.eeg
+/results/receipts/.*.tmp

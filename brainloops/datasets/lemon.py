@@ -273,6 +273,7 @@ def load_subject_conditions(
     subject: LEMONSubject,
     epoch_s: float = 0.5,
     fs: float = 100.0,
+    condition_errors: dict[str, str] | None = None,
 ) -> dict[str, LEMONConditionFeatures]:
     if fs <= 0 or epoch_s <= 0:
         raise ValueError("fs and epoch_s must be positive")
@@ -280,12 +281,20 @@ def load_subject_conditions(
     raw = _prepare_raw(raw, fs)
     by_condition, _ = _unscaled_feature_blocks(raw, epoch_s, fs, min_epochs=43)
     result: dict[str, LEMONConditionFeatures] = {}
+    failures: dict[str, str] = {}
     for condition in ("EC", "EO"):
         if len(by_condition[condition]) < 4:
+            failures[condition] = "condition has fewer than four usable physical blocks"
             continue
-        result[condition] = _scale_condition(subject.subject_id, condition, by_condition[condition])
+        try:
+            result[condition] = _scale_condition(subject.subject_id, condition, by_condition[condition])
+        except ValueError as exc:
+            failures[condition] = str(exc)
+    if condition_errors is not None:
+        condition_errors.update(failures)
     if not result:
-        raise ValueError("subject has no condition with at least four usable physical blocks")
+        details = "; ".join(f"{condition}: {reason}" for condition, reason in failures.items())
+        raise ValueError(f"subject has no usable condition: {details}")
     return result
 
 

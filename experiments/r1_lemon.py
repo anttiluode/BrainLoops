@@ -217,14 +217,19 @@ def run_r1(
         "heldout_subjects": heldout,
         "subject_conditions": rows,
     }
+    if output_path is not None and existing is None:
+        write_receipt(output_path, payload)
 
     for subject in subjects:
         needed = [c for c in ("EC", "EO") if (subject.subject_id, c) not in done]
         if not needed:
             continue
         split = "development" if is_development_subject(subject.subject_id) else "heldout"
+        condition_errors: dict[str, str] = {}
         try:
-            condition_map = load_subject_conditions(subject, epoch_s=0.5, fs=100.0)
+            condition_map = load_subject_conditions(
+                subject, epoch_s=0.5, fs=100.0, condition_errors=condition_errors
+            )
         except (ValueError, FileNotFoundError) as exc:
             for condition in needed:
                 rows.append({
@@ -248,7 +253,9 @@ def run_r1(
                     "split": split,
                     "condition": condition,
                     "status": "SKIP",
-                    "reason": "condition has fewer than four usable physical blocks",
+                    "reason": condition_errors.get(
+                        condition, "condition has fewer than four usable physical blocks"
+                    ),
                 })
                 done.add((subject.subject_id, condition))
                 payload["subject_conditions"] = rows
@@ -257,14 +264,24 @@ def run_r1(
                 continue
             cf = condition_map[condition]
             blocks = [batch.X for batch in cf.blocks]
-            result = evaluate_subject_condition(
-                blocks,
-                n_null=n_null,
-                seed=_stable_condition_seed(seed, subject.subject_id, condition),
-                epoch_s=0.5,
-                half_window=1,
-            )
-            row = _row_from_result(subject.subject_id, split, condition, cf, result)
+            try:
+                result = evaluate_subject_condition(
+                    blocks,
+                    n_null=n_null,
+                    seed=_stable_condition_seed(seed, subject.subject_id, condition),
+                    epoch_s=0.5,
+                    half_window=1,
+                )
+            except ValueError as exc:
+                row = {
+                    "subject_id": subject.subject_id,
+                    "split": split,
+                    "condition": condition,
+                    "status": "SKIP",
+                    "reason": str(exc),
+                }
+            else:
+                row = _row_from_result(subject.subject_id, split, condition, cf, result)
             rows.append(row)
             done.add((subject.subject_id, condition))
             payload["subject_conditions"] = rows

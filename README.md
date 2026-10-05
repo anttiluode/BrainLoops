@@ -1,5 +1,23 @@
 # BrainLoops
 
+## Current checkpoint
+
+| Work | Status | Meaning |
+|---|---|---|
+| Gate 0 | PASS | Synthetic calibration of the original recurrence instrument |
+| Gate 1A | PASS, limited null | Sensitivity to the task-clock timescale |
+| Gate 1B | FAIL | No privileged same-coarse-state return at T0 |
+| Gate 1C | PASS, same-dataset follow-up | Repeated local transition direction at T0 |
+| Gate 1C history diagnostic | Not supported | Matching preceding T1/T2 labels did not increase similarity |
+| R1 synthetic | PASS | Calibration of the separate resting-transition instrument |
+| R1 real LEMON | Pending | No real resting-data verdict yet |
+
+Read the [results ledger](results/RESULTS.md) for the numerical evidence,
+[resonance-valve interpretation](docs/interpretation/2026-10-05-resonance-valves.md)
+for the biological hypothesis and its limits, and [project state](docs/PROJECT_STATE.md)
+before resuming work. The [recovery record](docs/REPOSITORY_RECOVERY.md) reconciles the
+interrupted publication attempts and historical branches.
+
 BrainLoops asks a deliberately narrow question:
 
 > **What recurrent temporal structure is actually present in EEG-derived state trajectories when loop periods and state counts are not chosen in advance?**
@@ -119,6 +137,17 @@ The secondary history diagnostic did **not** support the specific idea that the 
 
 Gate 1C is **not an independent confirmation**: it was designed after seeing Gate 1B and reuses EEGMMIDB. Receipts mark this scope as `post_gate1b_followup_same_dataset`. The result supports repeated transition geometry at the known experimental boundary; it does not turn Gate 1B into a pass, identify an anatomical loop, or by itself establish spontaneous resting-state recurrence.
 
+The [full Gate 1C receipt](results/receipts/gate1c-eegmmidb.json) and its
+[compact summary](results/receipts/gate1c-eegmmidb-summary.json) are both available.
+The restored full receipt matches the summary's original SHA-256 exactly; the
+recovery check reproduced all 22 audited hash/count/numerical fields. This verifies
+the stored results, not a fresh run of the original EDF recordings.
+
+Gate 1C normalizes transition vectors before comparing their directions. It does
+not measure a reset, reduced excitation, or an anti-seizure function. A steadily
+increasing trajectory can score 1.0. See the [interpretation note](docs/interpretation/2026-10-05-resonance-valves.md#what-gate-1c-measures)
+for the concrete counterexample and the proposed inhibitory-feedback experiment.
+
 ## R1 — resting transition recurrence
 
 R1 is a new independent-dataset branch motivated by EEGMMIDB Gate 1C. Gate 1C suggested that an experimentally defined boundary can repeat a local **direction of state change** even when Gate 1B did not return to the same coarse state. R1 asks whether analogous transition geometry recurs spontaneously within resting EEG blocks, without an external task clock selecting candidate times.
@@ -163,7 +192,7 @@ brainloops r1-lemon --data "E:\path\to\lemon-raw" --n-null 99 --output results\r
 
 The canonical R1 receipt requires at least 20 usable held-out EC subjects and at least 19 null replicates; otherwise it reports `INSUFFICIENT_DATA`.
 
-R1 is an explicitly approved independent follow-up branch motivated by Gate 1C. It does **not** rewrite the frozen Gate 1B result or retroactively satisfy the original Gate-1B-to-LEMON advancement rule.
+R1 is an explicitly approved independent follow-up motivated by Gate 1C. Its implementation is consolidated in this repository. It does **not** rewrite the frozen Gate 1B result or retroactively satisfy the original Gate-1B-to-LEMON advancement rule.
 
 ## Dataset ladder
 
@@ -196,7 +225,7 @@ Python 3.11+:
 
 ```bash
 python -m pip install -e '.[test]'
-pytest -q
+python -m pytest -q
 brainloops gate0 --output /tmp/brainloops-gate0.json
 ```
 
@@ -212,28 +241,35 @@ brainloops/
   circulation.py    antisymmetric flux, motifs, return times
   nulls.py          reversible Markov and phase-preserving surrogates
   dynamics.py       ridge/DMD-style continuous modes
+  transition_recurrence.py       R1 comparison, nulls, and classification
+  transition_recurrence_core.py  R1 PCA, lag spectra, and transition vectors
   probe.py          headless combined probe
   datasets/
     eegmmidb.py     EEGMMIDB discovery + T0/T1/T2 parsing
+    lemon.py       raw BrainVision adapter preserving EC/EO blocks
 experiments/
   gate0_synthetic.py
   gate1_eegmmidb.py
   gate1b_eegmmidb.py
   gate1c_eegmmidb.py
+  r1_synthetic.py
+  r1_lemon.py
 results/
   RESULTS.md
   receipts/
-docs/superpowers/
+docs/
+  PROJECT_STATE.md
+  REPOSITORY_RECOVERY.md
+  interpretation/
+  archive/
+  superpowers/     frozen specifications and implementation plans
 ```
 
 The original design and implementation plan are frozen under `docs/superpowers/`; `results/RESULTS.md` records later corrections and observed results without rewriting that history.
 
-## Status
+## Continuing work
 
-- Gate 0 synthetic truth: **PASS**, implemented and frozen.
-- Gate 1A EEGMMIDB timescale positive control: **PASS** on the committed 109-subject receipt (`p = 0.01`, 73/88 held-out positive), with the state-shuffle-null limitation documented.
-- Gate 1B fixed-timeline phase alignment: **FAIL** on the committed 109-subject receipt (`p = 1.0`, 18/88 held-out positive; observed median `0.142857` vs null median `0.166667`).
-- Gate 1C repeated T0 transition geometry: **PASS** on the 109-subject follow-up receipt (`p = 0.01`, 78/88 held-out positive; real median `0.052647` vs aggregate-null median `0.005931`). It is a post-Gate-1B same-dataset follow-up, not independent confirmation.
-- Secondary Gate-1C history diagnostic: **not supported** (`history_delta = -0.01115`, 31/88 held-out positive); exploratory only.
-- LEMON resting-state work: **blocked by Gate 1B FAIL** under the frozen ladder.
-- R1 resting transition recurrence: **implementation + synthetic calibration PASS**; real LEMON receipt pending; independent follow-up branch, not a rewrite of Gate 1B.
+The checkpoint table above is the current status. Detailed numbers and claim
+boundaries live in [results/RESULTS.md](results/RESULTS.md). Start with
+[docs/PROJECT_STATE.md](docs/PROJECT_STATE.md) after an interruption so an older
+branch or a frozen plan is not mistaken for current implementation status.

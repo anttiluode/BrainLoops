@@ -69,6 +69,14 @@ Under the frozen dataset ladder, Gate 1B `FAIL` keeps LEMON blocked.
 
 Receipt analyzed: `results/receipts/gate1c-eegmmidb.json` (full 109-subject run produced with the frozen Gate-1C implementation).
 
+Publication recovery on 5 October 2026 restored the full receipt alongside
+`results/receipts/gate1c-eegmmidb-summary.json`. Its 5,245,933 bytes have SHA-256
+`b3be8457075207b30978bd7c057a6197df1af2ff935970c7cdb84c87058e508b`, exactly matching
+the previously committed summary. All 22 audited hash/count/numerical summary
+fields were recomputed without a mismatch. The original EDF analysis was not
+rerun during recovery. Receipt checksums are listed in
+[`receipts/SHA256SUMS`](receipts/SHA256SUMS).
+
 Gate 1C was designed **after observing Gate 1B**. It is therefore a mechanistic follow-up on the same dataset, not an independent confirmatory test and not a rescue of Gate 1B.
 
 The primary question changes from “does `T0` return to the same point?” to “does `T0` repeatedly produce a similar local direction of change?”
@@ -158,6 +166,23 @@ The canonical synthetic receipt `results/receipts/r1-synthetic.json` passes at `
 The real R1 analysis is not complete until raw LEMON BrainVision data are run under the frozen EC-primary / EO-replication configuration. No real LEMON result is claimed here.
 
 The original Gate-1B dataset ladder remains frozen. R1 is a separately approved independent follow-up branch motivated by Gate 1C, not a reinterpretation of the Gate 1B failure.
+
+## Interpretation update — inhibitory feedback and resonance valves
+
+The [5 October interpretation note](../docs/interpretation/2026-10-05-resonance-valves.md)
+connects temporal persistence, amplification, and activity-dependent inhibitory
+control as a testable hypothesis. The present EEG results do not identify that
+controller, demonstrate a reset, or establish an anti-seizure function.
+
+Gate 1C compares normalized transition directions. A monotonic trajectory with
+identical increments at event times scores 1.0 without returning to a state or
+reducing its magnitude. Its PASS therefore remains a transition-geometry result.
+R1 asks whether transition motifs recur within independent resting EEG; it does
+not yet test a frozen task-derived T0 template or a cell-specific mechanism.
+
+Recovery consolidated the existing R1 source and regenerated its canonical
+synthetic receipt at seed 1 and 99 nulls. The four frozen controls pass. The real
+LEMON receipt remains pending.
 
 ## Dataset ladder
 
