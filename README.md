@@ -1,5 +1,7 @@
 # BrainLoops
 
+Edit: added early inspiration for this. Brain_set_system.py
+
 ## Current checkpoint
 
 | Work | Status | Meaning |
